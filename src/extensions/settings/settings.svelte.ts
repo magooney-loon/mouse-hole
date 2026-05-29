@@ -51,12 +51,12 @@ const loadVolume = (key: string, fallback: number): number => {
 
 export const settingsState = $state<ExtensionState>({
 	audio: {
-		musicVolume: loadVolume(MUSIC_VOLUME_KEY, 0),
+		musicVolume: loadVolume(MUSIC_VOLUME_KEY, 0.5),
 		musicEnabled: false,
-		ambienceVolume: loadVolume(AMBIENCE_VOLUME_KEY, 0),
+		ambienceVolume: loadVolume(AMBIENCE_VOLUME_KEY, 1),
 		ambienceEnabled: false,
-		effectsVolume: loadVolume(EFFECTS_VOLUME_KEY, 0),
-		sfxVolume: loadVolume(SFX_VOLUME_KEY, 0),
+		effectsVolume: loadVolume(EFFECTS_VOLUME_KEY, 0.7),
+		sfxVolume: loadVolume(SFX_VOLUME_KEY, 0.7),
 		sfxEnabled: false
 	},
 	graphics: {
