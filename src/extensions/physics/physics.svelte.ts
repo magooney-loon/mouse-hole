@@ -23,7 +23,7 @@ const WORLD_DEFAULTS = {
 	gravityX: 0,
 	gravityY: -9.8,
 	gravityZ: 0,
-	framerate: 60 as PhysicsFramerate,
+	framerate: 'varying' as PhysicsFramerate,
 	debug: true
 };
 
