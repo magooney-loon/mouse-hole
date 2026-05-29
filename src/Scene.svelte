@@ -9,6 +9,7 @@
 	import MainMenu from '$scenes/MainMenu/MainMenu.svelte';
 	import DemoScene from '$scenes/DemoScene/DemoScene.svelte';
 	import House from '$scenes/House.svelte';
+	import GameScene from '$scenes/GameScene/GameScene.svelte';
 
 	let introT = $state(0);
 	let prevScene = $state(sceneState.currentScene);
@@ -36,6 +37,12 @@
 {#if sceneState.currentScene === 'mainMenu'}
 	<T.Group name="MainMenu" position={[0, posY, 0]} {scale}>
 		<MainMenu />
+	</T.Group>
+{/if}
+
+{#if sceneState.currentScene === 'gameScene'}
+	<T.Group name="GameScene" position={[0, posY, 0]} {scale}>
+		<GameScene />
 	</T.Group>
 {/if}
 

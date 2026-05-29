@@ -13,6 +13,7 @@ export type { ExtensionState, ExtensionActions, ScenePresets } from './types';
 
 export const SCENES: SceneConfig[] = [
 	{ id: 'mainMenu', label: 'Main Menu', icon: 'mdiHome' },
+	{ id: 'gameScene', label: 'Game Scene', icon: 'mdiMouse' },
 	{ id: 'demoScene', label: 'Demo Scene', icon: 'mdiEarth' }
 ];
 
@@ -101,6 +102,10 @@ export const sceneActions: ExtensionActions = {
 
 	goToMainMenu() {
 		this.setScene('mainMenu');
+	},
+
+	goToGameScene() {
+		this.setScene('gameScene');
 	},
 
 	goToDemoScene() {

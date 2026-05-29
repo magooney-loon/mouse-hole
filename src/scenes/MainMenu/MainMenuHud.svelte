@@ -95,7 +95,7 @@
 			<!-- Buttons -->
 			<div class="flex flex-col gap-3 w-full">
 				<button
-					onclick={() => { soundActions.playClick(); sceneActions.goToDemoScene(); }}
+					onclick={() => { soundActions.playClick(); sceneActions.goToGameScene(); }}
 					class="w-full py-4 text-xl font-black rounded-xl cursor-pointer
 					       bg-amber-400 text-black border-4 border-black
 					       transition-all duration-100

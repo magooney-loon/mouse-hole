@@ -1,6 +1,6 @@
 export const extensionScope = 'scene';
 
-export type SceneType = 'mainMenu' | 'demoScene';
+export type SceneType = 'mainMenu' | 'demoScene' | 'gameScene';
 
 export type ScenePresets = {
 	postprocessing?: string;
@@ -25,6 +25,7 @@ export type ExtensionActions = {
 	setScene: (scene: SceneType) => void;
 	goToMainMenu: () => void;
 	goToDemoScene: () => void;
+	goToGameScene: () => void;
 	goBack: () => void;
 	transitionTo: (scene: SceneType, transitionDuration?: number) => Promise<void>;
 	setScenePreset: (sceneId: SceneType, type: 'postprocessing' | 'skybox', presetId: string | null) => void;

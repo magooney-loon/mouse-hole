@@ -3,6 +3,7 @@
 	import { sceneState } from '$extensions/scene/scene.svelte';
 	import { settingsState } from '$extensions/settings/settings.svelte';
 	import MainMenuHud from '$scenes/MainMenu/MainMenuHud.svelte';
+	import GameSceneHud from '$scenes/GameScene/GameSceneHud.svelte';
 	import DemoSceneHud from '$scenes/DemoScene/DemoSceneHud.svelte';
 </script>
 
@@ -11,6 +12,10 @@
 	<div transition:fade={{ duration: 150 }}>
 		{#if sceneState.currentScene === 'mainMenu'}
 			<MainMenuHud />
+		{/if}
+
+		{#if sceneState.currentScene === 'gameScene'}
+			<GameSceneHud />
 		{/if}
 
 		{#if sceneState.currentScene === 'demoScene'}
