@@ -23,8 +23,18 @@
 
 	const CAM_DISTANCE = 0.69; // behind the mouse
 	const CAM_HEIGHT = 0.2;
-	const CAM_MIN_DIST = 0.4;
 	const CAM_LOOK_HEIGHT = 0.05;
+
+	// When collision forces the camera closer than FPS_BLEND_START, blend toward a
+	// first-person eye (fully first-person at FPS_BLEND_END) so it never clips walls.
+	const FPS_BLEND_START = 0.35;
+	const FPS_BLEND_END = 0.08;
+	const EYE_HEIGHT = 0.1; // head height above body center
+	const EYE_FWD = 0.27; // just ahead of the nose tip
+	const EYE_MARGIN = 0.06; // keep the FPS eye off walls ahead
+
+	const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
+	const lerp = (a: number, b: number, w: number) => a + (b - a) * w;
 
 	const _camDesired = new THREE.Vector3();
 	const _lookAt = new THREE.Vector3();
@@ -85,12 +95,10 @@
 		const backX = Math.sin(facingAngle);
 		const backZ = Math.cos(facingAngle);
 
-		_camDesired.set(t.x + backX * CAM_DISTANCE, eyeY + CAM_HEIGHT, t.z + backZ * CAM_DISTANCE);
-
-		// Collision: don't let the camera clip through walls behind the mouse.
-		const dx = _camDesired.x - t.x;
-		const dy = _camDesired.y - eyeY;
-		const dz = _camDesired.z - t.z;
+		// Desired third-person spot, and the ray from the player toward it.
+		const dx = backX * CAM_DISTANCE;
+		const dy = CAM_HEIGHT;
+		const dz = backZ * CAM_DISTANCE;
 		const fullDist = Math.sqrt(dx * dx + dy * dy + dz * dz);
 		const dirX = dx / fullDist;
 		const dirY = dy / fullDist;
@@ -99,17 +107,37 @@
 		const ray = new rapier.Ray({ x: t.x, y: eyeY, z: t.z }, { x: dirX, y: dirY, z: dirZ });
 		const hit = world.castRay(ray, fullDist, true, undefined, undefined, undefined, mouseBody);
 
-		let camDist = fullDist;
-		if (hit) camDist = Math.max(CAM_MIN_DIST, hit.timeOfImpact - 0.15);
+		// How far the camera can sit behind before hitting geometry.
+		const camDist = hit ? Math.max(0, hit.timeOfImpact - 0.08) : fullDist;
 
-		_camDesired.set(t.x + dirX * camDist, eyeY + dirY * camDist, t.z + dirZ * camDist);
+		// Collision-limited third-person position.
+		const tpX = t.x + dirX * camDist;
+		const tpY = eyeY + dirY * camDist;
+		const tpZ = t.z + dirZ * camDist;
+
+		// First-person eye just ahead of the nose, looking along the heading
+		// (fwdX/fwdZ from the throttle step; heading is horizontal so fwdY = 0).
+		// Forward-raycast so the eye can't poke through a wall the mouse faces.
+		const fpY = t.y + EYE_HEIGHT;
+		const eyeRay = new rapier.Ray({ x: t.x, y: fpY, z: t.z }, { x: fwdX, y: 0, z: fwdZ });
+		const eyeHit = world.castRay(eyeRay, EYE_FWD, true, undefined, undefined, undefined, mouseBody);
+		const eyeFwd = eyeHit ? Math.max(0, eyeHit.timeOfImpact - EYE_MARGIN) : EYE_FWD;
+		const fpX = t.x + fwdX * eyeFwd;
+		const fpZ = t.z + fwdZ * eyeFwd;
+
+		// Blend third- → first-person as the camera is forced closer.
+		const fpsW = clamp01((FPS_BLEND_START - camDist) / (FPS_BLEND_START - FPS_BLEND_END));
+
+		_camDesired.set(lerp(tpX, fpX, fpsW), lerp(tpY, fpY, fpsW), lerp(tpZ, fpZ, fpsW));
 		if (!camInitialized) {
 			gameCam.position.copy(_camDesired);
 			camInitialized = true;
 		} else {
 			gameCam.position.lerp(_camDesired, Math.min(1, delta * 10));
 		}
-		_lookAt.set(t.x, eyeY, t.z);
+
+		// Look at the mouse in third-person, forward along the heading in first.
+		_lookAt.set(lerp(t.x, fpX + fwdX, fpsW), lerp(eyeY, fpY, fpsW), lerp(t.z, fpZ + fwdZ, fpsW));
 		gameCam.lookAt(_lookAt);
 
 		// Advance edge-detection buffer AFTER reading inputs this frame.
@@ -199,12 +227,6 @@
 		<T.Mesh position={[0, 0.04, 0.22]} rotation={[Math.PI / 2.4, 0, 0]}>
 			<T.CylinderGeometry args={[0.008, 0.018, 0.34, 8]} />
 			<T.MeshStandardMaterial color="#e8b4a0" flatShading />
-		</T.Mesh>
-
-		<!-- DEBUG: cone pointing in the facing direction (local -Z). Remove later. -->
-		<T.Mesh position={[0, 0.22, -0.3]} rotation={[-Math.PI / 2, 0, 0]}>
-			<T.ConeGeometry args={[0.04, 0.22, 12]} />
-			<T.MeshStandardMaterial color="#00ff66" emissive="#00ff66" emissiveIntensity={0.6} />
 		</T.Mesh>
 	</RigidBody>
 </T.Group>
