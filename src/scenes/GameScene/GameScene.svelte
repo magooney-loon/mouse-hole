@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onDestroy } from 'svelte';
 	import { T, useTask } from '@threlte/core';
-	import { RigidBody, Collider, useRapier } from '@threlte/rapier';
+	import { RigidBody, Collider, Debug, useRapier } from '@threlte/rapier';
 	import { inputQueries, advanceInputFrame } from '$extensions/input/input.svelte';
 	import * as THREE from 'three';
 
@@ -23,10 +23,13 @@
 	const WALK_SPEED = 3;
 	const SPRINT_SPEED = 6;
 	const JUMP_VELOCITY = 5;
-	const GROUND_RAY_LEN = 0.15; // collider half-height (0.09) + margin
+	const GROUND_RAY_LEN = 0.16; // collider half-height (0.1) + margin
 
 	// Horizontal speed captured when leaving the ground — a running jump keeps it.
 	let takeoffSpeed = WALK_SPEED;
+	// Smoothed horizontal velocity so sprint on/off and start/stop don't jolt.
+	let curVelX = 0;
+	let curVelZ = 0;
 
 	const CAM_DISTANCE = 0.69; // behind the mouse
 	const CAM_HEIGHT = 0.2;
@@ -93,8 +96,14 @@
 		// world (-sin, -cos) after a Y rotation of facingAngle.
 		const fwdX = -Math.sin(facingAngle);
 		const fwdZ = -Math.cos(facingAngle);
-		const velX = fwdX * move.y * speed;
-		const velZ = fwdZ * move.y * speed;
+		const targetVX = fwdX * move.y * speed;
+		const targetVZ = fwdZ * move.y * speed;
+
+		// Ease toward the target velocity instead of snapping — kills the jolt
+		// when sprint toggles or movement starts/stops. Snappier on the ground.
+		const k = Math.min(1, delta * (grounded ? 16 : 5));
+		curVelX += (targetVX - curVelX) * k;
+		curVelZ += (targetVZ - curVelZ) * k;
 
 		// Preserve gravity/jump on the Y axis; jump only on a fresh ground edge.
 		const vel = mouseBody.linvel();
@@ -103,7 +112,7 @@
 			velY = JUMP_VELOCITY;
 		}
 
-		mouseBody.setLinvel({ x: velX, y: velY, z: velZ }, true);
+		mouseBody.setLinvel({ x: curVelX, y: velY, z: curVelZ }, true);
 		mouseBody.setAngvel({ x: 0, y: 0, z: 0 }, true);
 
 		// Chase camera — trails behind the heading. Behind = (sin, cos).
@@ -178,6 +187,9 @@
 
 <T.AmbientLight intensity={1.2} />
 
+<!-- DEBUG: draws all collider wireframes (check the mouse collider size). Remove later. -->
+<Debug />
+
 <!-- Static floor placeholder -->
 <T.Group>
 	<Collider shape="cuboid" args={[50, 0.1, 50]} />
@@ -197,7 +209,7 @@
 			mouseBody = rb;
 		}}
 	>
-		<Collider shape="cuboid" args={[0.08, 0.09, 0.12]} />
+		<Collider shape="cuboid" args={[0.1, 0.1, 0.16]} />
 
 		<!-- Tracks the interpolated body transform for the camera to follow -->
 		<T.Object3D oncreate={(ref) => { mouseObj = ref; }} />
