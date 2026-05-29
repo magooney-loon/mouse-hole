@@ -43,8 +43,18 @@
 <!-- Ambient fill so the house interior is visible -->
 <T.AmbientLight intensity={1.2} />
 
+<!-- Static floor — a Collider with no RigidBody parent is static in Rapier.
+     Adjust Y until it matches the house model's floor height. -->
+<T.Group position={[0, 0, 0]}>
+	<Collider shape="cuboid" args={[50, 0.1, 50]} />
+	<T.Mesh receiveShadow>
+		<T.BoxGeometry args={[100, 0.2, 100]} />
+		<T.MeshStandardMaterial color="#8B6914" transparent opacity={0.3} />
+	</T.Mesh>
+</T.Group>
+
 <!-- Mouse player placeholder -->
-<T.Group position={[0, 2, 0.5]}>
+<T.Group position={[0, 1, 0]}>
 	<RigidBody
 		type="dynamic"
 		lockRotations
