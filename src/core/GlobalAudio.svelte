@@ -9,7 +9,7 @@
 	import { logSound } from '$extensions/logger/logger.svelte';
 	import { soundTriggers } from './globalAudio.svelte';
 
-	const OST_URL = `${BASE_URL}sounds/music/main_menu.mp3`;
+	const OST_URL = `${BASE_URL}sounds/music/main_2.mp3`;
 	const AMBIENCE_URL = `${BASE_URL}sounds/ambience.mp3`;
 	const CLICK_URL = `${BASE_URL}sounds/click.mp3`;
 	const SWOOSH_URL = `${BASE_URL}sounds/swoosh.mp3`;

@@ -1,16 +1,54 @@
-const isWavedash = typeof window !== 'undefined' && 'Wavedash' in window;
+import type { WavedashSDK } from '@wvdsh/sdk-js';
 
+// IMPORTANT: the host installs `window.Wavedash` as a *Promise* that resolves to
+// the SDK singleton (see the official example: `const Wavedash = await window.Wavedash`).
+// Calling methods on the unresolved promise silently does nothing — which is why
+// the host's setup warning never cleared. We must await it first.
+// Type-only import keeps us type-safe without pulling in the runtime.
+
+let sdk: WavedashSDK | null = null;
 let initialized = false;
 
+const resolveSDK = async (): Promise<WavedashSDK | null> => {
+	if (sdk) return sdk;
+	if (typeof window === 'undefined') return null;
+	// The host may install window.Wavedash slightly after our bundle starts;
+	// poll briefly until it appears.
+	let tries = 0;
+	let handle = (window as Window & { Wavedash?: unknown }).Wavedash;
+	while (!handle && tries++ < 100) {
+		await new Promise((r) => setTimeout(r, 100));
+		handle = (window as Window & { Wavedash?: unknown }).Wavedash;
+	}
+	if (!handle) return null;
+	// Awaiting works whether the host gives a Promise<SDK> or the SDK directly.
+	sdk = (await handle) as WavedashSDK;
+	return sdk;
+};
+
 export const wavedashActions = {
-	updateProgress(zeroToOne: number) {
-		if (!isWavedash) return;
-		(window as any).Wavedash.updateLoadProgressZeroToOne(Math.max(0, Math.min(1, zeroToOne)));
+	async updateProgress(zeroToOne: number) {
+		const s = await resolveSDK();
+		if (!s) return;
+		s.updateLoadProgressZeroToOne(Math.max(0, Math.min(1, zeroToOne)));
 	},
 
-	init() {
-		if (!isWavedash || initialized) return;
+	async init() {
+		if (initialized) return;
+		const s = await resolveSDK();
+		if (!s) return;
 		initialized = true;
-		(window as any).Wavedash.init({ debug: import.meta.env.DEV });
-	},
+		s.init({ debug: import.meta.env.DEV });
+	}
 };
+
+// Call once at app startup. Awaits the host SDK then inits immediately, so the
+// host's setup warning clears and the game is revealed without depending on the
+// asset loader. Safe no-op outside the Wavedash host (e.g. plain `vite dev`).
+export async function startWavedash(): Promise<void> {
+	const s = await resolveSDK();
+	if (!s || initialized) return;
+	initialized = true;
+	s.updateLoadProgressZeroToOne(1);
+	s.init({ debug: import.meta.env.DEV });
+}
