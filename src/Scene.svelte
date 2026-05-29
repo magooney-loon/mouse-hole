@@ -8,6 +8,7 @@
 	import { sceneState } from '$extensions/scene/scene.svelte';
 	import MainMenu from '$scenes/MainMenu/MainMenu.svelte';
 	import DemoScene from '$scenes/DemoScene/DemoScene.svelte';
+	import House from '$scenes/House.svelte';
 
 	let introT = $state(0);
 	let prevScene = $state(sceneState.currentScene);
@@ -30,6 +31,7 @@
 <Camera />
 <GlobalAudio />
 <Skybox />
+<House />
 
 {#if sceneState.currentScene === 'mainMenu'}
 	<T.Group name="MainMenu" position={[0, posY, 0]} {scale}>
