@@ -2,9 +2,16 @@
 	import CanvasPortalTarget from '$lib/components/CanvasPortalTarget.svelte';
 	import { Canvas } from '@threlte/core';
 	import type { Snippet } from 'svelte';
+	import { onMount } from 'svelte';
 	import favicon from '$lib/assets/favicon.svg';
 
 	let { children }: { children: Snippet } = $props();
+
+	onMount(async () => {
+		const { default: Wavedash } = await import('@wvdsh/sdk-js');
+		Wavedash.updateLoadProgressZeroToOne(1);
+		Wavedash.init({ debug: true });
+	});
 </script>
 
 <svelte:head>
