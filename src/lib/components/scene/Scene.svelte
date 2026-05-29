@@ -1,22 +1,13 @@
 <script lang="ts">
-	import { T, useTask } from '@threlte/core';
-	import { interactivity } from '@threlte/extras';
+	import { T } from '@threlte/core';
+	import { GLTF, interactivity } from '@threlte/extras';
 
 	interactivity();
-
-	let rotation = $state(0);
-
-	useTask((delta) => {
-		rotation += delta;
-	});
 </script>
 
-<T.PerspectiveCamera position.z={5} makeDefault />
+<T.PerspectiveCamera position={[0, 10, 10]} fov={50} lookAt={[0, 0, 0]} makeDefault />
 
-<T.DirectionalLight position={[3, 4, 5]} intensity={1} />
-<T.AmbientLight intensity={0.4} />
+<T.DirectionalLight position={[5, 10, 5]} intensity={1} />
+<T.AmbientLight intensity={0.6} />
 
-<T.Mesh rotation.y={rotation} rotation.x={rotation * 0.3}>
-	<T.BoxGeometry />
-	<T.MeshStandardMaterial color="hotpink" />
-</T.Mesh>
+<GLTF url="/house/scene.gltf" position={[0, 9, 11]} />
