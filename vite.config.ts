@@ -1,6 +1,31 @@
-import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vite';
+import { svelte } from '@sveltejs/vite-plugin-svelte';
+import { threlteStudio } from '@threlte/studio/vite';
+import { visualizer } from 'rollup-plugin-visualizer';
+import tailwindcss from '@tailwindcss/vite';
+import path from 'path';
 
+// https://vite.dev/config/
 export default defineConfig({
-	plugins: [sveltekit()]
+	base: process.env.BASE_PATH ?? '/',
+	plugins: [
+		threlteStudio(),
+		svelte(),
+		tailwindcss(),
+		visualizer({
+			filename: 'stats.html',
+			open: false,
+			gzipSize: true
+		})
+	],
+	resolve: {
+		alias: {
+			$lib: path.resolve(__dirname, './src/lib'),
+			$root: path.resolve(__dirname, './src'),
+			$bindings: path.resolve(__dirname, './src/module_bindings'),
+			$core: path.resolve(__dirname, './src/core'),
+			$extensions: path.resolve(__dirname, './src/extensions'),
+			$scenes: path.resolve(__dirname, './src/scenes')
+		}
+	}
 });
