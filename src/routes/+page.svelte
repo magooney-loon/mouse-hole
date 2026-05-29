@@ -4,6 +4,7 @@
 	import Scene from '$lib/components/scene/Scene.svelte';
 	import MainMenu from '$lib/components/ui/MainMenu.svelte';
 	import { game } from '$lib/stores/game.svelte';
+	import { setMusicState } from '$lib/audio/music.svelte';
 
 	let username = $state<string | undefined>(undefined);
 
@@ -13,6 +14,7 @@
 	});
 
 	function startGame() {
+		setMusicState('main');
 		game.state = 'playing';
 	}
 </script>

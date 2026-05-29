@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { sound, toggleSound } from '$lib/audio/music.svelte';
+
 	let { onPlay, username }: { onPlay: () => void; username?: string } = $props();
 </script>
 
@@ -9,7 +11,11 @@
 			<p class="tagline">Your hole is the safest place in the world.</p>
 		</div>
 
-		<button class="play-btn" onclick={onPlay}> Play </button>
+		<button class="play-btn" onclick={onPlay}>Play</button>
+
+		<button class="sound-btn" onclick={toggleSound}>
+			{sound.enabled ? '♪ Sound On' : '♪ Sound Off'}
+		</button>
 
 		{#if username}
 			<p class="welcome">Good luck out there, {username}.</p>
@@ -24,7 +30,11 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		background: radial-gradient(ellipse at center, rgba(10, 6, 4, 0.55) 0%, rgba(10, 6, 4, 0.82) 100%);
+		background: radial-gradient(
+			ellipse at center,
+			rgba(10, 6, 4, 0.55) 0%,
+			rgba(10, 6, 4, 0.82) 100%
+		);
 		z-index: 10;
 	}
 
@@ -97,6 +107,28 @@
 	.play-btn:active {
 		transform: translateY(0);
 		background: #c07d38;
+	}
+
+	.sound-btn {
+		padding: 0.45rem 1.4rem;
+		font-family: Georgia, 'Times New Roman', serif;
+		font-size: 0.85rem;
+		letter-spacing: 0.08em;
+		color: #c8a87a;
+		background: transparent;
+		border: 1px solid rgba(200, 168, 122, 0.35);
+		border-radius: 3px;
+		cursor: pointer;
+		transition:
+			color 0.15s ease,
+			border-color 0.15s ease,
+			background 0.15s ease;
+	}
+
+	.sound-btn:hover {
+		color: #f5e6c8;
+		border-color: rgba(200, 168, 122, 0.7);
+		background: rgba(200, 168, 122, 0.08);
 	}
 
 	.welcome {
