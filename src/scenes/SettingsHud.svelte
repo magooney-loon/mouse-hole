@@ -147,28 +147,32 @@
 <div class="pointer-events-auto">
 	<div
 		transition:fly={{ y: -16, duration: 220 }}
-		class="absolute inset-0 flex items-center justify-center bg-amber-950/70 backdrop-blur-md"
+		class="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-md"
 	>
 		<div
-			class="bg-amber-950/90 border-4 border-amber-700/60 rounded-3xl p-8 text-amber-100
-			       flex flex-col shadow-2xl
+			class="bg-black/60 border-4 border-black rounded-2xl p-8 text-white flex flex-col backdrop-blur-md
 			       {activeTab === 'controls' ? 'w-[26rem]' : 'w-96'}"
+			style="box-shadow: 7px 7px 0 #000;"
 		>
 			<!-- Header -->
 			<div class="flex items-center gap-3 mb-6">
 				<span class="text-3xl select-none" aria-hidden="true">⚙️</span>
-				<h2 class="m-0 text-2xl font-black text-amber-200 tracking-tight">Settings</h2>
+				<h2
+					class="m-0 text-2xl font-black text-amber-300 uppercase"
+					style="text-shadow: 2px 2px 0 #000;"
+				>Settings</h2>
 			</div>
 
 			<!-- Tab bar -->
-			<div class="flex gap-1.5 mb-6 bg-amber-900/40 border border-amber-700/30 rounded-2xl p-1">
+			<div class="flex gap-2 mb-6 bg-black/40 border-4 border-black rounded-xl p-1"
+			     style="box-shadow: 3px 3px 0 #000;">
 				{#each [['controls', '🎮 Controls'], ['audio', '🔊 Audio']] as const as [id, label]}
 					<button
 						onclick={() => switchTab(id)}
-						class="flex-1 py-2 rounded-xl text-sm font-bold transition-all cursor-pointer
+						class="flex-1 py-2 rounded-lg text-sm font-black transition-all duration-100 cursor-pointer
 						       {activeTab === id
-							? 'bg-amber-500 text-amber-950 shadow-md'
-							: 'text-amber-400/60 hover:text-amber-300'}"
+							? 'bg-amber-400 text-black'
+							: 'text-white/40 hover:text-white/70'}"
 					>
 						{label}
 					</button>
@@ -179,16 +183,17 @@
 			{#if activeTab === 'controls'}
 				{#if isCapturing && captureAction}
 					<div
-						class="mb-4 flex items-center justify-between gap-3 bg-amber-800/40
-						       border-2 border-amber-600/50 rounded-2xl px-4 py-2.5 text-sm"
+						class="mb-4 flex items-center justify-between gap-3 bg-amber-400/20
+						       border-4 border-black rounded-xl px-4 py-2.5 text-sm"
+						style="box-shadow: 3px 3px 0 #000;"
 					>
-						<span class="animate-pulse text-amber-200">
+						<span class="animate-pulse text-white font-bold">
 							Binding <strong class="text-amber-300">{ACTION_LABELS[captureAction]}</strong> — press a key or click…
 						</span>
 						<button
 							onclick={cancelCapture}
-							class="text-amber-400/70 hover:text-amber-200 transition-colors cursor-pointer
-							       text-xs border border-amber-600/40 rounded-lg px-2 py-1"
+							class="text-white/60 hover:text-white transition-colors cursor-pointer
+							       text-xs border-2 border-black rounded-lg px-2 py-1 font-black bg-white/10"
 						>
 							Cancel
 						</button>
@@ -198,47 +203,45 @@
 				<div class="overflow-y-auto max-h-[55vh] flex flex-col gap-5 pr-1">
 					{#each ACTION_GROUPS as group}
 						<div>
-							<p class="m-0 mb-2.5 text-xs font-black uppercase tracking-widest text-amber-500/60">
+							<p class="m-0 mb-2.5 text-xs font-black uppercase tracking-widest text-amber-400/70">
 								{group.icon} {group.label}
 							</p>
-							<div class="flex flex-col gap-1">
+							<div class="flex flex-col gap-1.5">
 								{#each group.actions as action}
 									{@const bindings = (inputState.players.player1.actions[action] ?? []).filter(b => b.device === 'keyboard' || b.device === 'mouse')}
 									{@const capturing = isCapturing && captureAction === action}
 									<div
-										class="flex items-center gap-2 rounded-xl px-3 py-2 transition-colors
+										class="flex items-center gap-2 rounded-xl px-3 py-2 border-2 transition-colors
 										       {capturing
-											? 'bg-amber-700/30 border-2 border-amber-500/40'
-											: 'hover:bg-amber-800/30 border-2 border-transparent'}"
+											? 'bg-amber-400/20 border-black'
+											: 'border-transparent hover:bg-white/5 hover:border-white/10'}"
 									>
-										<span class="text-sm w-36 shrink-0 text-amber-200/80 font-medium">
+										<span class="text-sm w-36 shrink-0 text-white/70 font-bold">
 											{ACTION_LABELS[action]}
 										</span>
 
 										<div class="flex flex-wrap gap-1 flex-1 min-w-0">
 											{#each bindings as b (b.id)}
 												<span
-													class="inline-flex items-center gap-1 bg-amber-800/60
-													       border border-amber-600/50 rounded-lg px-1.5 py-0.5"
+													class="inline-flex items-center gap-1 bg-amber-400 border-2 border-black rounded px-1.5 py-0.5"
+													style="box-shadow: 2px 2px 0 #000;"
 												>
-													<kbd class="font-mono text-xs leading-none text-amber-200"
-														>{formatBinding(b)}</kbd
-													>
+													<kbd class="font-black text-xs leading-none text-black">{formatBinding(b)}</kbd>
 													<button
 														onclick={() => removeBinding(action, b.id)}
-														class="opacity-40 hover:opacity-100 transition-opacity cursor-pointer leading-none text-xs text-amber-300"
+														class="text-black/50 hover:text-black transition-opacity cursor-pointer leading-none text-xs font-black"
 														aria-label="Remove binding">×</button
 													>
 												</span>
 											{/each}
 
 											{#if capturing}
-												<span class="text-xs text-amber-400/50 italic self-center">waiting…</span>
+												<span class="text-xs text-amber-400/60 italic self-center font-bold">waiting…</span>
 											{:else}
 												<button
 													onclick={() => startBind(action)}
-													class="text-xs text-amber-500/50 hover:text-amber-300 transition-colors cursor-pointer
-													       border border-amber-700/40 rounded-lg px-1.5 py-0.5 leading-none"
+													class="text-xs text-white/40 hover:text-white transition-colors cursor-pointer font-black
+													       border-2 border-white/20 rounded px-1.5 py-0.5 leading-none hover:border-white/40"
 													aria-label="Add binding">+</button
 												>
 											{/if}
@@ -247,7 +250,7 @@
 										<button
 											onclick={() => resetAction(action)}
 											title="Reset to default"
-											class="opacity-30 hover:opacity-80 transition-opacity cursor-pointer text-sm shrink-0 text-amber-300"
+											class="text-white/30 hover:text-amber-400 transition-colors cursor-pointer text-sm shrink-0 font-black"
 											>↺</button
 										>
 									</div>
@@ -259,8 +262,8 @@
 
 				<button
 					onclick={resetAllControls}
-					class="mt-4 w-full py-2 text-sm font-bold text-amber-500/50 border-2 border-amber-700/30
-					       rounded-2xl hover:bg-amber-800/30 hover:text-amber-300 transition-all cursor-pointer"
+					class="mt-4 w-full py-2 text-sm font-black text-white/50 border-4 border-black/40
+					       rounded-xl hover:bg-white/5 hover:text-white/80 transition-all cursor-pointer"
 				>
 					↺ Reset All Controls
 				</button>
@@ -274,12 +277,12 @@
 						{ key: 'ambience', label: '🌙 Ambience', enabled: settingsState.audio.ambienceEnabled, volume: settingsState.audio.ambienceVolume, toggle: audioActions.toggleAmbience, setVol: audioActions.setAmbienceVolume }
 					] as ch}
 						<div class="flex flex-col gap-2">
-							<label class="flex items-center gap-3 cursor-pointer text-sm font-bold text-amber-200">
+							<label class="flex items-center gap-3 cursor-pointer text-sm font-black text-white">
 								<input
 									type="checkbox"
 									checked={ch.enabled}
 									onchange={() => ch.toggle()}
-									class="w-4 h-4 accent-amber-500 cursor-pointer"
+									class="w-4 h-4 accent-amber-400 cursor-pointer"
 								/>
 								{ch.label}
 							</label>
@@ -291,15 +294,15 @@
 								aria-label="{ch.label} volume"
 								value={ch.volume}
 								oninput={(e) => ch.setVol(+(e.target as HTMLInputElement).value)}
-								class="w-full accent-amber-500 cursor-pointer"
+								class="w-full accent-amber-400 cursor-pointer"
 								disabled={!ch.enabled}
 							/>
 						</div>
 					{/each}
 				</div>
 
-				<div class="mt-4 border-t border-amber-700/30 pt-4">
-					<p class="m-0 mb-3 text-xs font-black uppercase tracking-widest text-amber-500/60">
+				<div class="mt-5 border-t-4 border-black/30 pt-5">
+					<p class="m-0 mb-3 text-xs font-black uppercase tracking-widest text-white/40">
 						🖥️ Graphics
 					</p>
 					<div class="flex gap-2">
@@ -309,10 +312,12 @@
 									soundActions.playClick();
 									graphicsActions.setQuality(level as QualityLevel);
 								}}
-								class="flex-1 px-4 py-2.5 rounded-xl border-2 font-bold text-sm transition-all capitalize cursor-pointer
+								class="flex-1 px-4 py-2.5 rounded-xl border-4 border-black font-black text-sm
+								       transition-all duration-100 capitalize cursor-pointer
 								       {settingsState.graphics.quality === level
-									? 'border-amber-500/80 bg-amber-600/40 text-amber-200'
-									: 'border-amber-700/30 bg-transparent text-amber-400/60 hover:bg-amber-800/30 hover:text-amber-300'}"
+									? 'bg-amber-400 text-black'
+									: 'bg-white/10 text-white/50 hover:bg-white/15 hover:text-white/80'}"
+								style={settingsState.graphics.quality === level ? 'box-shadow: 3px 3px 0 #000;' : ''}
 							>
 								{level === 'low' ? '🐌 Low' : '✨ High'}
 							</button>
@@ -328,9 +333,14 @@
 					if (isCapturing) inputActions.cancelCapture();
 					onBack();
 				}}
-				class="mt-5 w-full px-4 py-3 font-bold text-amber-950 bg-amber-500 border-4 border-amber-400/50
-				       rounded-2xl cursor-pointer hover:bg-amber-400 hover:scale-105 active:scale-95
-				       transition-all shadow-md shadow-amber-900/40"
+				class="mt-6 w-full px-4 py-3 font-black text-black bg-amber-400 border-4 border-black
+				       rounded-xl cursor-pointer transition-all duration-100
+				       hover:translate-x-[2px] hover:translate-y-[2px]
+				       active:translate-x-[5px] active:translate-y-[5px]"
+				style="box-shadow: 5px 5px 0 #000;"
+				onmousedown={(e) => (e.currentTarget.style.boxShadow = '1px 1px 0 #000')}
+				onmouseup={(e) => (e.currentTarget.style.boxShadow = '5px 5px 0 #000')}
+				onmouseleave={(e) => (e.currentTarget.style.boxShadow = '5px 5px 0 #000')}
 			>
 				← Back to Menu
 			</button>
