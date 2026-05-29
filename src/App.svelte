@@ -11,7 +11,6 @@
 	import * as THREE from 'three';
 	import { HTML } from '@threlte/extras';
 	import { settingsState } from '$extensions/settings/settings.svelte';
-	import { planetDemoState } from '$lib/PlanetDemo/planetDemoState.svelte';
 	import './app.css';
 
 	// Create custom renderer — antialias disabled in favour of SMAA post-processing
@@ -42,12 +41,6 @@
 </script>
 
 <Keymapper />
-
-<svelte:head>
-	{#if planetDemoState.faviconUri}
-		<link rel="icon" type="image/svg+xml" href={planetDemoState.faviconUri} />
-	{/if}
-</svelte:head>
 
 <Loader />
 
