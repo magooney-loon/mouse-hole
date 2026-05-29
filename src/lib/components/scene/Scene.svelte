@@ -10,4 +10,4 @@
 <T.DirectionalLight position={[5, 10, 5]} intensity={1} />
 <T.AmbientLight intensity={0.6} />
 
-<GLTF url="/house/scene.gltf" position={[0, 9, 11]} />
+<GLTF url="/house/scene.gltf" position={[-0.08, 9, 11]} />
