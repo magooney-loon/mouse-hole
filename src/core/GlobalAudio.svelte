@@ -10,7 +10,7 @@
 	import { soundTriggers } from './globalAudio.svelte';
 
 	const OST_URL = `${BASE_URL}sounds/ost.ogg`;
-	const AMBIENCE_URL = `${BASE_URL}sounds/ambience.ogg`;
+	const AMBIENCE_URL = `${BASE_URL}sounds/ambience.mp3`;
 	const CLICK_URL = `${BASE_URL}sounds/click.mp3`;
 	const SWOOSH_URL = `${BASE_URL}sounds/swoosh.mp3`;
 
