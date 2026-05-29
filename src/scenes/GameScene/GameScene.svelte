@@ -8,10 +8,12 @@
 	const { world, rapier } = useRapier();
 
 	let mouseBody: any = null;
+	let mouseObj: THREE.Object3D | null = null;
 	let gameCam: THREE.PerspectiveCamera | null = null;
 
 	onDestroy(() => {
 		mouseBody = null;
+		mouseObj = null;
 		gameCam = null;
 	});
 
@@ -38,6 +40,7 @@
 
 	const _camDesired = new THREE.Vector3();
 	const _lookAt = new THREE.Vector3();
+	const _pos = new THREE.Vector3();
 	let camInitialized = false;
 
 	// Heading angle (radians). 0 = nose pointing toward -Z.
@@ -90,7 +93,10 @@
 		mouseBody.setAngvel({ x: 0, y: 0, z: 0 }, true);
 
 		// Chase camera — trails behind the heading. Behind = (sin, cos).
-		const t = mouseBody.translation();
+		// Follow the *interpolated* render transform (not the raw 60 Hz physics
+		// translation) so the camera stays in sync with the visible mesh and
+		// doesn't stutter at speed. The sync stage runs before this renderStage task.
+		const t = mouseObj ? mouseObj.getWorldPosition(_pos) : mouseBody.translation();
 		const eyeY = t.y + CAM_LOOK_HEIGHT;
 		const backX = Math.sin(facingAngle);
 		const backZ = Math.cos(facingAngle);
@@ -178,6 +184,9 @@
 		}}
 	>
 		<Collider shape="cuboid" args={[0.08, 0.09, 0.12]} />
+
+		<!-- Tracks the interpolated body transform for the camera to follow -->
+		<T.Object3D oncreate={(ref) => { mouseObj = ref; }} />
 
 		<!-- Body: rounded, elongated front-to-back (local -Z is forward) -->
 		<T.Mesh castShadow position={[0, 0, 0.03]} scale={[1, 0.85, 1.4]}>
