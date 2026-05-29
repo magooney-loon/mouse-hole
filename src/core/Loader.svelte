@@ -4,6 +4,7 @@
 	import { cubicOut } from 'svelte/easing';
 	import { useProgress } from '@threlte/extras';
 	import { logEngine } from '$extensions/logger/logger.svelte';
+	import { wavedashActions } from '$extensions/wavedash/wavedash.svelte';
 
 	const { progress, finishedOnce, active, item, loaded, total } = useProgress();
 
@@ -15,7 +16,14 @@
 	});
 
 	$effect(() => {
-		if (isFinished) logEngine.info('Assets loaded');
+		wavedashActions.updateProgress($total === 0 ? 1 : $progress);
+	});
+
+	$effect(() => {
+		if (isFinished) {
+			logEngine.info('Assets loaded');
+			wavedashActions.init();
+		}
 	});
 
 	function truncatePath(path: string | undefined): string {
