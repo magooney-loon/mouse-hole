@@ -5,6 +5,7 @@
 	import { useProgress } from '@threlte/extras';
 	import { logEngine } from '$extensions/logger/logger.svelte';
 	import { wavedashActions } from '$extensions/wavedash/wavedash.svelte';
+	import { audioActions } from '$extensions/settings/settings.svelte';
 
 	const { progress, finishedOnce, active, item, loaded, total } = useProgress();
 
@@ -25,6 +26,28 @@
 			wavedashActions.init();
 		}
 	});
+
+	let showSoundPrompt = $state(false);
+
+	$effect(() => {
+		if (!isFinished) return;
+		// wait for the loader fade-out to finish before showing the prompt
+		const t = setTimeout(() => {
+			showSoundPrompt = true;
+		}, 950);
+		return () => clearTimeout(t);
+	});
+
+	function enableSounds() {
+		audioActions.toggleMusic();
+		audioActions.toggleSfx();
+		audioActions.toggleAmbience();
+		showSoundPrompt = false;
+	}
+
+	function declineSounds() {
+		showSoundPrompt = false;
+	}
 
 	function truncatePath(path: string | undefined): string {
 		if (!path) return '';
@@ -57,5 +80,44 @@
 				{$loaded} / {$total}
 			</p>
 		{/if}
+	</div>
+{/if}
+
+{#if showSoundPrompt}
+	<div
+		transition:fade={{ duration: 300 }}
+		class="pointer-events-auto absolute inset-0 z-100 flex items-center justify-center
+		       bg-amber-950/70 backdrop-blur-sm"
+	>
+		<div
+			class="flex flex-col items-center gap-5 px-10 py-8 max-w-sm w-full mx-4
+			       bg-amber-950/95 border-4 border-amber-700/60 rounded-3xl shadow-2xl text-center"
+		>
+			<div class="text-5xl select-none" aria-hidden="true">🔊</div>
+			<div>
+				<h2 class="m-0 text-xl font-black text-amber-200 tracking-tight">Turn on sounds?</h2>
+				<p class="m-0 mt-2 text-sm text-amber-400/70 leading-relaxed">
+					Enable music, effects, and ambience?
+				</p>
+			</div>
+			<div class="flex gap-3 w-full">
+				<button
+					onclick={enableSounds}
+					class="flex-1 py-3 font-black text-amber-950 bg-amber-500 border-4 border-amber-400/50
+					       rounded-2xl cursor-pointer hover:bg-amber-400 hover:scale-105 active:scale-95
+					       transition-all shadow-md shadow-amber-900/40"
+				>
+					Yes please!
+				</button>
+				<button
+					onclick={declineSounds}
+					class="flex-1 py-3 font-bold text-amber-400/60 bg-amber-900/40 border-2 border-amber-700/30
+					       rounded-2xl cursor-pointer hover:bg-amber-800/50 hover:text-amber-300
+					       transition-all"
+				>
+					No thanks
+				</button>
+			</div>
+		</div>
 	</div>
 {/if}
