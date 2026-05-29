@@ -20,8 +20,13 @@
 	// Car-style controls: A/D steer the heading, W/S drive forward/back along it.
 	// The body turns to its heading; a chase camera trails behind it.
 	const TURN_RATE = 2.8; // rad/s
+	const WALK_SPEED = 3;
+	const SPRINT_SPEED = 6;
 	const JUMP_VELOCITY = 5;
 	const GROUND_RAY_LEN = 0.15; // collider half-height (0.09) + margin
+
+	// Horizontal speed captured when leaving the ground — a running jump keeps it.
+	let takeoffSpeed = WALK_SPEED;
 
 	const CAM_DISTANCE = 0.69; // behind the mouse
 	const CAM_HEIGHT = 0.2;
@@ -65,8 +70,17 @@
 		if (!mouseBody || !gameCam) return;
 
 		const move = inputQueries.getMoveVector('player1');
-		const sprinting = inputQueries.isPressed('player1', 'sprint');
-		const speed = sprinting ? 6 : 3;
+		const grounded = isGrounded();
+
+		// Sprint only engages on the ground. A running jump keeps the speed it
+		// launched with; you can't start sprinting mid-air.
+		let speed: number;
+		if (grounded) {
+			speed = inputQueries.isPressed('player1', 'sprint') ? SPRINT_SPEED : WALK_SPEED;
+			takeoffSpeed = speed;
+		} else {
+			speed = takeoffSpeed;
+		}
 
 		// Steering — A/D rotate the heading (D = turn right / clockwise).
 		facingAngle -= move.x * TURN_RATE * delta;
@@ -85,7 +99,7 @@
 		// Preserve gravity/jump on the Y axis; jump only on a fresh ground edge.
 		const vel = mouseBody.linvel();
 		let velY = vel.y;
-		if (inputQueries.wasPressed('player1', 'jump') && isGrounded()) {
+		if (inputQueries.wasPressed('player1', 'jump') && grounded) {
 			velY = JUMP_VELOCITY;
 		}
 
