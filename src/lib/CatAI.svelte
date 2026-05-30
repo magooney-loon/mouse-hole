@@ -78,6 +78,7 @@
 	const CATCH_COOLDOWN = 0.9;
 	const KNOCKBACK_SPEED = 3.5;
 	const KNOCKBACK_UP = 1.8;
+	const PERSONAL_SPACE_DIST = 1.1;
 	const INVESTIGATE_DUR = 3.5;
 	const SEARCH_TIMEOUT = 10;
 	const SIGHT_LOSS_TIMEOUT = 1.5;
@@ -717,6 +718,14 @@
 		}
 
 		// ── Apply velocity ───────────────────────────────────────────────────
+		// Stop advancing into the mouse when close — prevents pinning in corners
+		// and stops the cat body from physically shoving the mouse through geometry.
+		const distToMouse = _catPos.distanceTo(_mousePos);
+		if (catAIState.mode === 'chase' && distToMouse < PERSONAL_SPACE_DIST) {
+			desiredVX = 0;
+			desiredVZ = 0;
+		}
+
 		const k = Math.min(1, delta * (grounded ? 14 : 4));
 		curVelX += (desiredVX - curVelX) * k;
 		curVelZ += (desiredVZ - curVelZ) * k;
@@ -770,7 +779,7 @@
 		</T.Mesh>
 
 		{#if $gltf}
-			<T.Group scale={0.02} position={[0, -0.45, 0]} rotation={[0, Math.PI, 0]}>
+			<T.Group scale={0.02} position={[0, -0.45, 0.15]} rotation={[0, Math.PI, 0]}>
 				<T is={$gltf.scene} />
 			</T.Group>
 		{/if}
