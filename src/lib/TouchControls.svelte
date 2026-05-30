@@ -2,8 +2,6 @@
 	import { inputState } from '$extensions/input/input.svelte';
 	import type { InputAction } from '$extensions/input/types';
 
-	const isTouchDevice =
-		typeof navigator !== 'undefined' && (navigator.maxTouchPoints > 0 || 'ontouchstart' in window);
 
 	const RING = 96; // outer ring diameter px
 	const RADIUS = RING / 2 - 4; // max thumb travel
@@ -83,7 +81,7 @@
 	ontouchcancel={onWindowTouchEnd}
 />
 
-{#if isTouchDevice}
+<div class="touch-only">
 	<!-- Joystick touch zone — left half, lower portion; captures touches for the stick -->
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div
@@ -178,4 +176,15 @@
 			ontouchcancel={() => btnUp('jump')}
 		>JUMP</button>
 	</div>
-{/if}
+</div>
+
+<style>
+	.touch-only {
+		display: none;
+	}
+	@media (pointer: coarse) {
+		.touch-only {
+			display: contents;
+		}
+	}
+</style>
