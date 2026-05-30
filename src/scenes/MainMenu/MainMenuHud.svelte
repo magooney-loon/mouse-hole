@@ -2,6 +2,7 @@
 	import { sceneActions } from '$extensions/scene/scene.svelte';
 	import { soundActions } from '$core/GlobalAudio.svelte';
 	import { gameActions } from '$lib/gameState.svelte';
+	import { catAIState } from '$lib/catAI.svelte';
 	import SettingsHud from '$scenes/SettingsHud.svelte';
 
 	let showSettings = $state(false);
@@ -56,8 +57,14 @@
 						soundActions.playClick();
 						gameActions.start();
 						soundActions.playKatzeIntro();
-						setTimeout(() => soundActions.playRandomMeow(0.4), 2000);
-						setTimeout(() => soundActions.playRandomMeow(), 5000);
+						setTimeout(() => {
+							catAIState.introMeowVolume = 0.4;
+							catAIState.introMeowTrigger++;
+						}, 2000);
+						setTimeout(() => {
+							catAIState.introMeowVolume = 1.0;
+							catAIState.introMeowTrigger++;
+						}, 5000);
 						sceneActions.goToGameScene();
 					}}
 					class="{btnBase} py-4 text-xl bg-amber-400 text-black"
