@@ -72,19 +72,19 @@
 	const ESCAPE_PROBE_COUNT = 8; // directions to test for escape
 	const ESCAPE_PROBE_DIST = 1.5; // how far each escape probe reaches
 
-	const PATROL_WAYPOINTS = [
-		new THREE.Vector3(1.29, 0, 2.14),
-		new THREE.Vector3(8.127, 0, 1.407),
-		new THREE.Vector3(6.352, 0, -7.188),
-		new THREE.Vector3(3.0, 0, -4.0)
-	];
+	// ── Roaming constants ────────────────────────────────────────────────────
+	const ROAM_DIR_MIN_TIME = 2.0; // min seconds before picking new direction
+	const ROAM_DIR_MAX_TIME = 5.0; // max seconds before picking new direction
+	const ROAM_PROBE_FWD = 1.2; // forward probe distance for wall detection
+	const ROAM_PROBE_SIDE = 0.8; // side probe distance
+	const ROAM_PROBE_COUNT = 12; // directions scanned when picking new roam dir
 
 	// ── Per-frame local state ─────────────────────────────────────────────────
 	let facingAngle = 0;
 	let curVelX = 0;
 	let curVelZ = 0;
-	let patrolIndex = 0;
-	let patrolDir = 1;
+	let roamTimer = 0; // countdown to next direction change
+	let roamTargetAngle = 0; // current roaming heading
 	let stuckTimer = 0;
 	let noSightTimer = 0;
 	let searchTimer = 0;
@@ -100,8 +100,8 @@
 		facingAngle = 0;
 		curVelX = 0;
 		curVelZ = 0;
-		patrolIndex = 0;
-		patrolDir = 1;
+		roamTimer = 0;
+		roamTargetAngle = 0;
 		stuckTimer = 0;
 		noSightTimer = 0;
 		searchTimer = 0;
@@ -347,6 +347,40 @@
 		return bestAngle;
 	};
 
+	// ── Roaming direction picker ────────────────────────────────────────────────
+	// Scans around the cat and picks the most open direction to walk toward.
+	// Optionally biased away from a "danger zone" direction to avoid backtracking.
+	const pickRoamDir = (t: { x: number; y: number; z: number }): number => {
+		const eyeY = t.y + CONE_EYE_HEIGHT;
+		let bestAngle = Math.random() * Math.PI * 2;
+		let bestScore = -1;
+
+		for (let i = 0; i < ROAM_PROBE_COUNT; i++) {
+			const a = (i / ROAM_PROBE_COUNT) * Math.PI * 2;
+			const dx = -Math.sin(a);
+			const dz = -Math.cos(a);
+
+			// Forward clearance
+			const fwdClear = wallDist(t.x, eyeY, t.z, dx, dz, ROAM_PROBE_FWD);
+			// Side clearance (perpendicular — checks corridor width)
+			const sideA1 = a + Math.PI / 2;
+			const sideA2 = a - Math.PI / 2;
+			const side1 = wallDist(t.x, eyeY, t.z, -Math.sin(sideA1), -Math.cos(sideA1), ROAM_PROBE_SIDE);
+			const side2 = wallDist(t.x, eyeY, t.z, -Math.sin(sideA2), -Math.cos(sideA2), ROAM_PROBE_SIDE);
+			const corridor = Math.min(side1, side2);
+
+			// Score: forward clearance + corridor width + small random for variety
+			const score = fwdClear * 0.6 + corridor * 0.3 + Math.random() * 0.3;
+
+			if (score > bestScore) {
+				bestScore = score;
+				bestAngle = a;
+			}
+		}
+
+		return bestAngle;
+	};
+
 	// ── Main task ─────────────────────────────────────────────────────────────
 	useTask((delta) => {
 		if (!catBody) return;
@@ -474,26 +508,39 @@
 		let targetZ = t.z;
 		let speed = 0;
 		let shouldMove = false;
+		let desiredVX = 0;
+		let desiredVZ = 0;
 
 		switch (catAIState.mode) {
 			case 'patrol': {
-				const wp = PATROL_WAYPOINTS[patrolIndex];
-				const dx = wp.x - t.x;
-				const dz = wp.z - t.z;
-				if (Math.sqrt(dx * dx + dz * dz) < ARRIVE_DIST) {
-					patrolIndex += patrolDir;
-					if (patrolIndex >= PATROL_WAYPOINTS.length) {
-						patrolIndex = PATROL_WAYPOINTS.length - 2;
-						patrolDir = -1;
-					}
-					if (patrolIndex < 0) {
-						patrolIndex = 1;
-						patrolDir = 1;
-					}
+				// Smart roaming: walk forward, avoid walls, pick new directions periodically
+				roamTimer -= delta;
+
+				// Check if wall dead ahead — force an early direction change
+				const fwdX = -Math.sin(facingAngle);
+				const fwdZ = -Math.cos(facingAngle);
+				const fwdClear = wallDist(
+					t.x,
+					t.y + CONE_EYE_HEIGHT,
+					t.z,
+					fwdX,
+					fwdZ,
+					ROAM_PROBE_FWD * 0.6
+				);
+
+				if (roamTimer <= 0 || fwdClear < 0.3) {
+					// Pick a new roam direction — favour open corridors
+					roamTargetAngle = pickRoamDir(t);
+					roamTimer = ROAM_DIR_MIN_TIME + Math.random() * (ROAM_DIR_MAX_TIME - ROAM_DIR_MIN_TIME);
 				}
-				const next = PATROL_WAYPOINTS[patrolIndex];
-				targetX = next.x;
-				targetZ = next.z;
+
+				// Steer toward roamTargetAngle
+				const diff = shortestDiff(facingAngle, roamTargetAngle);
+				facingAngle += diff * Math.min(1, delta * 3.0);
+
+				// Walk forward along current facing
+				desiredVX = -Math.sin(facingAngle) * CAT_WALK_SPEED;
+				desiredVZ = -Math.cos(facingAngle) * CAT_WALK_SPEED;
 				speed = CAT_WALK_SPEED;
 				shouldMove = true;
 				break;
@@ -526,11 +573,9 @@
 			}
 		}
 
-		// ── Compute desired velocity (before avoidance) ──────────────────────
-		let desiredVX = 0;
-		let desiredVZ = 0;
+		// ── Compute desired velocity from target (search/chase only) ────────────
 
-		if (shouldMove) {
+		if (shouldMove && catAIState.mode !== 'patrol') {
 			const dx = targetX - t.x;
 			const dz = targetZ - t.z;
 			const dist = Math.sqrt(dx * dx + dz * dz);

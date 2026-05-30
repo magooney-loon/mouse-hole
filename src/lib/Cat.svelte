@@ -5,7 +5,9 @@
 	import { LoopRepeat } from 'three';
 	import * as THREE from 'three';
 
-	interface Props { pos?: { x: number; y: number; z: number } }
+	interface Props {
+		pos?: { x: number; y: number; z: number };
+	}
 	let { pos }: Props = $props();
 
 	const gltf = useGltf(`${BASE_URL}models/stages/cat.glb`);
@@ -58,7 +60,11 @@
 
 		_catPos.lerpVectors(from, to, s);
 
-		if (pos) { pos.x = _catPos.x; pos.y = _catPos.y; pos.z = _catPos.z; }
+		if (pos) {
+			pos.x = _catPos.x;
+			pos.y = _catPos.y;
+			pos.z = _catPos.z;
+		}
 
 		if (catGroup) {
 			catGroup.position.copy(_catPos);
@@ -80,7 +86,7 @@
 
 {#if $gltf}
 	<T.Group
-		scale={0.02}
+		scale={0.01}
 		oncreate={(ref) => {
 			catGroup = ref;
 		}}
