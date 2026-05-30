@@ -4,6 +4,7 @@
 	import { RigidBody, Collider, useRapier } from '@threlte/rapier';
 	import { inputQueries, advanceInputFrame } from '$extensions/input/input.svelte';
 	import { tickGameState, gameState } from '$lib/gameState.svelte';
+	import { mouseSharedPos } from '$lib/catAI.svelte';
 	import { soundActions } from '$core/globalAudio.svelte';
 	import * as THREE from 'three';
 
@@ -110,6 +111,9 @@
 		mouseBody.setAngvel({ x: 0, y: 0, z: 0 }, true);
 
 		const t = mouseObj ? mouseObj.getWorldPosition(_pos) : mouseBody.translation();
+		mouseSharedPos.x = t.x;
+		mouseSharedPos.y = t.y;
+		mouseSharedPos.z = t.z;
 		const eyeY = t.y + CAM_LOOK_HEIGHT;
 		const backX = Math.sin(facingAngle);
 		const backZ = Math.cos(facingAngle);
