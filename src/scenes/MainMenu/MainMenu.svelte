@@ -3,6 +3,7 @@
 	import { useRapier } from '@threlte/rapier';
 	import { get } from 'svelte/store';
 	import * as THREE from 'three';
+	import Cat from '$lib/Cat.svelte';
 
 	const { camera } = useThrelte();
 	const { world, rapier } = useRapier();
@@ -77,3 +78,4 @@
 </script>
 
 <T.Group name="MainMenu" />
+<Cat />
