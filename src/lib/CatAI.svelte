@@ -76,8 +76,8 @@
 	const ARRIVE_DIST = 1.0;
 	const CATCH_DIST = 0.78;
 	const CATCH_COOLDOWN = 0.9;
-	const KNOCKBACK_SPEED = 3.5;
-	const KNOCKBACK_UP = 1.8;
+	const KNOCKBACK_SPEED = 2.5;
+	const KNOCKBACK_UP = 1.2;
 	const PERSONAL_SPACE_DIST = 0.65;
 	const INVESTIGATE_DUR = 3.5;
 	const SEARCH_TIMEOUT = 10;
@@ -808,7 +808,7 @@
 			catBody = rb;
 		}}
 	>
-		<Collider shape="cuboid" args={[0.36, 0.3, 0.6]} />
+		<Collider shape="cuboid" args={[0.36, 0.3, 0.6]} oncreate={(c) => c.setCollisionGroups(0xFFFE0002)} />
 
 		<!-- Debug: collider visualization (remove when done) -->
 		<T.Mesh>

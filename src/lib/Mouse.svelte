@@ -95,7 +95,8 @@
 
 		let speed: number;
 		if (grounded) {
-			speed = (inputQueries.isPressed('player1', 'sprint') ? SPRINT_SPEED : WALK_SPEED) * carryPenalty;
+			const canSprint = inputQueries.isPressed('player1', 'sprint') && gameState.stamina > 0;
+			speed = (canSprint ? SPRINT_SPEED : WALK_SPEED) * carryPenalty;
 			takeoffSpeed = speed;
 		} else {
 			speed = takeoffSpeed;
@@ -195,7 +196,7 @@
 		_lookAt.set(lerp(t.x, fpX + fwdX, fpsW), lerp(eyeY, fpY, fpsW), lerp(t.z, fpZ + fwdZ, fpsW));
 		gameCam.lookAt(_lookAt);
 
-		const sprinting = inputQueries.isPressed('player1', 'sprint') && grounded;
+		const sprinting = inputQueries.isPressed('player1', 'sprint') && grounded && gameState.stamina > 0;
 		const strafing = Math.abs(strafe) > 0.1;
 		const moving = Math.abs(move.y) > 0.1 || strafing;
 		tickGameState(delta, sprinting, moving, !grounded);
@@ -230,7 +231,7 @@
 			mouseBodyRef.current = rb;
 		}}
 	>
-		<Collider shape="cuboid" args={[0.1, 0.1, 0.16]} />
+		<Collider shape="cuboid" args={[0.1, 0.1, 0.16]} oncreate={(c) => c.setCollisionGroups(0xFFFD0001)} />
 
 		<T.Object3D
 			oncreate={(ref) => {
