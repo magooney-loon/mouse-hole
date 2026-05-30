@@ -5,6 +5,7 @@
 	import { soundActions } from '$core/GlobalAudio.svelte';
 	import PlayerStats from '$lib/PlayerStats.svelte';
 	import { gameState, gameActions } from '$lib/gameState.svelte';
+	import { decorationState } from '$lib/decorationState.svelte';
 
 	const countdown = $derived(Math.ceil(gameState.startTimer));
 
@@ -43,24 +44,64 @@
 		</div>
 	{/if}
 
-	<!-- Cheese interact prompt -->
-	{#if gameState.status === 'playing' && gameState.cheeseInRange}
+	<!-- Carrying indicator — bottom center -->
+	{#if gameState.status === 'playing' && decorationState.carrying}
 		<div
-			class="absolute bottom-20 left-1/2 -translate-x-1/2"
-			transition:fly={{ y: 8, duration: 160 }}
+			class="absolute bottom-28 left-1/2 -translate-x-1/2"
+			transition:fly={{ y: 8, duration: 180 }}
 		>
 			<div
-				class="flex items-center gap-2.5 bg-black/70 border-2 border-amber-400/60 rounded-xl px-4 py-2.5 backdrop-blur-sm"
-				style="box-shadow: 0 0 12px #f5c21840;"
+				class="flex items-center gap-2 bg-purple-900/80 border-2 border-purple-400/70 rounded-full px-4 py-1.5 backdrop-blur-sm"
+				style="box-shadow: 0 0 16px #a855f740;"
 			>
-				<span class="text-lg">🧀</span>
-				<span class="text-white/80 font-bold text-sm">Press</span>
-				<kbd
-					class="bg-amber-400 text-black border-2 border-black rounded px-1.5 py-0.5 font-black text-xs leading-none"
-					style="box-shadow: 2px 2px 0 #000;"
-				>F</kbd>
-				<span class="text-white/80 font-bold text-sm">to eat cheese</span>
+				<span class="text-base">💎</span>
+				<span class="text-purple-200 font-black text-xs uppercase tracking-widest">Carrying decoration</span>
 			</div>
+		</div>
+	{/if}
+
+	<!-- Interact prompts — stacked above each other if multiple active -->
+	{#if gameState.status === 'playing'}
+		<div class="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2">
+			{#if decorationState.carrying && decorationState.deliverInRange}
+				<div transition:fly={{ y: 6, duration: 140 }}>
+					<div
+						class="flex items-center gap-2.5 bg-black/70 border-2 border-green-400/70 rounded-xl px-4 py-2.5 backdrop-blur-sm"
+						style="box-shadow: 0 0 12px #4ade8040;"
+					>
+						<span class="text-lg">🏠</span>
+						<span class="text-white/80 font-bold text-sm">Release here to deliver!</span>
+					</div>
+				</div>
+			{/if}
+
+			{#if decorationState.pickupInRange && !decorationState.carrying}
+				<div transition:fly={{ y: 6, duration: 140 }}>
+					<div
+						class="flex items-center gap-2.5 bg-black/70 border-2 border-purple-400/60 rounded-xl px-4 py-2.5 backdrop-blur-sm"
+						style="box-shadow: 0 0 12px #a855f740;"
+					>
+						<span class="text-lg">💎</span>
+						<span class="text-white/80 font-bold text-sm">Hold</span>
+						<kbd class="bg-purple-400 text-black border-2 border-black rounded px-1.5 py-0.5 font-black text-xs leading-none" style="box-shadow: 2px 2px 0 #000;">F</kbd>
+						<span class="text-white/80 font-bold text-sm">to drag decoration</span>
+					</div>
+				</div>
+			{/if}
+
+			{#if gameState.cheeseInRange && !decorationState.carrying}
+				<div transition:fly={{ y: 6, duration: 140 }}>
+					<div
+						class="flex items-center gap-2.5 bg-black/70 border-2 border-amber-400/60 rounded-xl px-4 py-2.5 backdrop-blur-sm"
+						style="box-shadow: 0 0 12px #f5c21840;"
+					>
+						<span class="text-lg">🧀</span>
+						<span class="text-white/80 font-bold text-sm">Press</span>
+						<kbd class="bg-amber-400 text-black border-2 border-black rounded px-1.5 py-0.5 font-black text-xs leading-none" style="box-shadow: 2px 2px 0 #000;">F</kbd>
+						<span class="text-white/80 font-bold text-sm">to eat cheese</span>
+					</div>
+				</div>
+			{/if}
 		</div>
 	{/if}
 

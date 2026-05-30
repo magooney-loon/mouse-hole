@@ -4,7 +4,8 @@
 	import { RigidBody, Collider, useRapier } from '@threlte/rapier';
 	import { inputQueries, advanceInputFrame } from '$extensions/input/input.svelte';
 	import { tickGameState, gameState } from '$lib/gameState.svelte';
-	import { mouseHitRequest, mouseSharedPos, mouseBodyRef } from '$lib/catAI.svelte';
+	import { mouseHitRequest, mouseSharedPos, mouseSharedFacing, mouseBodyRef } from '$lib/catAI.svelte';
+	import { decorationState } from '$lib/decorationState.svelte';
 	import { soundActions } from '$core/globalAudio.svelte';
 	import * as THREE from 'three';
 
@@ -88,9 +89,13 @@
 		const move = locked ? { x: 0, y: 0 } : inputQueries.getMoveVector('player1');
 		const grounded = isGrounded();
 
+		mouseSharedFacing.angle = facingAngle;
+
+		const carryPenalty = decorationState.carrying ? 0.52 : 1.0;
+
 		let speed: number;
 		if (grounded) {
-			speed = inputQueries.isPressed('player1', 'sprint') ? SPRINT_SPEED : WALK_SPEED;
+			speed = (inputQueries.isPressed('player1', 'sprint') ? SPRINT_SPEED : WALK_SPEED) * carryPenalty;
 			takeoffSpeed = speed;
 		} else {
 			speed = takeoffSpeed;

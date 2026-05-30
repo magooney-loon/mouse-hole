@@ -8,7 +8,8 @@ export const catAIState = $state({
 });
 
 // Written by Mouse.svelte every frame — plain object, no reactivity overhead
-export const mouseSharedPos = { x: 1.936, y: 1, z: -1.894 };
+export const mouseSharedPos    = { x: 1.936, y: 1, z: -1.894 };
+export const mouseSharedFacing = { angle: 4.341 };
 
 export const mouseHitRequest = {
 	id: 0,

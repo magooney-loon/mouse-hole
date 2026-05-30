@@ -25,6 +25,7 @@
 	const MOUSE_WALKING_URL  = `${BASE_URL}sounds/sfx/mouse_walking.ogg`;
 	const MOUSE_EATING_URL   = `${BASE_URL}sounds/sfx/mouse_eating.ogg`;
 	const CAT_ALERT_URL      = `${BASE_URL}sounds/sfx/cat_alert.ogg`;
+	const IMPACT_URL         = `${BASE_URL}sounds/sfx/impact.ogg`;
 	const MEOW_URLS = [
 		`${BASE_URL}sounds/sfx/meow_1.ogg`,
 		`${BASE_URL}sounds/sfx/meow_2.ogg`,
@@ -46,6 +47,7 @@
 	let mouseWalkingAudio    = $state.raw<ThreeAudio>();
 	let mouseEatingAudio     = $state.raw<ThreeAudio>();
 	let catAlertAudio        = $state.raw<ThreeAudio>();
+	let impactAudio          = $state.raw<ThreeAudio>();
 	let meowAudios           = $state.raw<(ThreeAudio | undefined)[]>([undefined, undefined, undefined, undefined]);
 
 	// ── SFX helpers ───────────────────────────────────────────────────────────
@@ -148,6 +150,7 @@
 	$effect(() => { if (mouseWalkingAudio)   mouseWalkingAudio.setVolume(settingsState.audio.sfxVolume); });
 	$effect(() => { if (mouseEatingAudio)    mouseEatingAudio.setVolume(settingsState.audio.sfxVolume); });
 	$effect(() => { if (catAlertAudio)       catAlertAudio.setVolume(settingsState.audio.sfxVolume); });
+	$effect(() => { if (impactAudio)         impactAudio.setVolume(settingsState.audio.sfxVolume * 0.7); });
 
 	// ── SFX triggers ─────────────────────────────────────────────────────────
 	$effect(() => {
@@ -220,6 +223,17 @@
 		}
 	});
 	$effect(() => {
+		if (soundTriggers.impact > 0 && settingsState.audio.sfxEnabled) {
+			if (impactAudio?.buffer) {
+				const clone = impactAudio.clone() as ThreeAudio;
+				clone.setVolume(impactAudio.getVolume());
+				clone.setPlaybackRate(0.8 + Math.random() * 0.4);
+				clone.play();
+			}
+			soundTriggers.impact = 0;
+		}
+	});
+	$effect(() => {
 		if (soundTriggers.meowTrigger > 0 && settingsState.audio.sfxEnabled) {
 			const audio = meowAudios[soundTriggers.meowWhich - 1];
 			if (audio?.buffer) {
@@ -245,6 +259,7 @@
 <Audio src={MOUSE_WALKING_URL} loop oncreate={(a) => { mouseWalkingAudio = a; logSound.info('Audio loaded: MouseWalking'); }}   userData={{ hideInTree: true }} />
 <Audio src={MOUSE_EATING_URL}      oncreate={(a) => { mouseEatingAudio = a;  logSound.info('Audio loaded: MouseEating'); }}  userData={{ hideInTree: true }} />
 <Audio src={CAT_ALERT_URL}         oncreate={(a) => { catAlertAudio = a;     logSound.info('Audio loaded: CatAlert'); }}     userData={{ hideInTree: true }} />
+<Audio src={IMPACT_URL}            oncreate={(a) => { impactAudio = a;       logSound.info('Audio loaded: Impact'); }}       userData={{ hideInTree: true }} />
 
 {#each MEOW_URLS as src, i}
 	<Audio {src} oncreate={(a) => {

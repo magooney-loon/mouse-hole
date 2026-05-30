@@ -4,6 +4,8 @@
 	import Mouse from '$lib/Mouse.svelte';
 	import CatAI from '$lib/CatAI.svelte';
 	import Cheese from '$lib/Cheese.svelte';
+	import Decoration from '$lib/Decoration.svelte';
+	import SpawnPoint from '$lib/SpawnPoint.svelte';
 </script>
 
 <!-- Static floor placeholder -->
@@ -19,3 +21,6 @@
 <Cheese position={[1.29, 0, 2.14]} />
 <Cheese position={[8.127, 0, 1.407]} />
 <Cheese position={[6.352, 0, -7.188]} />
+
+<Decoration position={[7.156, 0.879, -8.027]} spawnPosition={[1.936, 0.05, -1.894]} />
+<SpawnPoint position={[1.936, 0.05, -1.894]} />
