@@ -2,8 +2,8 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { T, useTask } from '@threlte/core';
 	import { RigidBody, Collider, useRapier } from '@threlte/rapier';
-	import { useGltf, useGltfAnimations } from '@threlte/extras';
-	import { BASE_URL } from '$extensions/settings/settings.svelte';
+	import { useGltf, useGltfAnimations, PositionalAudio } from '@threlte/extras';
+	import { BASE_URL, settingsState } from '$extensions/settings/settings.svelte';
 	import { catAIState, mouseHitRequest, mouseSharedPos, mouseBodyRef } from '$lib/catAI.svelte';
 	import { gameState } from '$lib/gameState.svelte';
 	import { soundActions } from '$core/globalAudio.svelte';
@@ -18,6 +18,25 @@
 	const gltf = useGltf(`${BASE_URL}models/stages/cat.glb`);
 	const { actions } = useGltfAnimations(gltf);
 	let anim: any = null;
+
+	// ── Positional meow audio ──────────────────────────────────────────────────
+	const MEOW_URLS = [
+		`${BASE_URL}sounds/sfx/meow_1.ogg`,
+		`${BASE_URL}sounds/sfx/meow_2.ogg`,
+		`${BASE_URL}sounds/sfx/meow_3.ogg`,
+		`${BASE_URL}sounds/sfx/meow_4.ogg`
+	];
+	let meowAudios: any[] = [undefined, undefined, undefined, undefined];
+
+	const playMeow = (volume = 1.0) => {
+		if (!settingsState.audio.sfxEnabled) return;
+		const idx = Math.floor(Math.random() * 4);
+		const audio = meowAudios[idx];
+		if (!audio?.buffer) return;
+		const clone = audio.clone();
+		clone.setVolume(settingsState.audio.sfxVolume * volume);
+		clone.play();
+	};
 
 	$effect(() => {
 		const act = $actions?.['GltfAnimation 0'];
@@ -458,13 +477,13 @@
 					catAIState.mode = 'chase';
 					catAIState.lastKnownPos = { x: _mousePos.x, y: _mousePos.y, z: _mousePos.z };
 					noSightTimer = 0;
-					soundActions.playRandomMeow(0.7 + catAIState.alertLevel * 0.3);
+					playMeow(0.7 + catAIState.alertLevel * 0.3);
 					meowCooldown = 4 + Math.random() * 4;
 				} else if (hears) {
 					catAIState.mode = 'search';
 					catAIState.lastKnownPos = { x: _mousePos.x, y: _mousePos.y, z: _mousePos.z };
 					searchTimer = SEARCH_TIMEOUT;
-					soundActions.playRandomMeow(0.3 + (gameState.sound / 100) * 0.4);
+					playMeow(0.3 + (gameState.sound / 100) * 0.4);
 					meowCooldown = 3 + Math.random() * 3;
 				}
 				catAIState.alertLevel = Math.max(0, catAIState.alertLevel - 0.3 * delta);
@@ -474,7 +493,7 @@
 				if (sees) {
 					catAIState.mode = 'chase';
 					noSightTimer = 0;
-					soundActions.playRandomMeow(1.0);
+					playMeow(1.0);
 					meowCooldown = 4 + Math.random() * 4;
 				} else {
 					if (hears) {
@@ -515,7 +534,7 @@
 					catAIState.lastKnownPos = { x: _mousePos.x, y: _mousePos.y, z: _mousePos.z };
 					noSightTimer = 0;
 					if (meowCooldown <= 0) {
-						soundActions.playRandomMeow(0.8 + Math.random() * 0.2);
+						playMeow(0.8 + Math.random() * 0.2);
 						meowCooldown = 3 + Math.random() * 5;
 					}
 				} else {
@@ -541,7 +560,7 @@
 				if (sees) {
 					catAIState.mode = 'chase';
 					noSightTimer = 0;
-					soundActions.playRandomMeow(1.0);
+					playMeow(1.0);
 					meowCooldown = 4 + Math.random() * 4;
 				} else if (hears) {
 					catAIState.mode = 'search';
@@ -755,6 +774,19 @@
 				<T is={$gltf.scene} />
 			</T.Group>
 		{/if}
+
+		<!-- Positional meow audio sources -->
+		{#each MEOW_URLS as src, i}
+			<PositionalAudio
+				{src}
+				refDistance={10}
+				maxDistance={30}
+				rolloffFactor={1.5}
+				oncreate={(a) => {
+					meowAudios[i] = a;
+				}}
+			/>
+		{/each}
 	</RigidBody>
 </T.Group>
 
