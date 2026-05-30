@@ -47,9 +47,7 @@
 		`${BASE_URL}sounds/sfx/meow_3.ogg`,
 		`${BASE_URL}sounds/sfx/meow_4.ogg`
 	];
-	const KATZE_INTRO_URL = `${BASE_URL}sounds/sfx/katze_voice_intro.ogg`;
 	let meowAudios: any[] = [undefined, undefined, undefined, undefined];
-	let katzeIntroAudio: any = undefined;
 
 	const playMeow = (volume = 1.0) => {
 		if (!settingsState.audio.sfxEnabled) return;
@@ -60,29 +58,6 @@
 		clone.setVolume(settingsState.audio.sfxVolume * volume);
 		clone.play();
 	};
-
-	const playKatzeIntro = () => {
-		if (!settingsState.audio.sfxEnabled) return;
-		const audio = katzeIntroAudio;
-		if (!audio?.buffer) return;
-		const clone = audio.clone();
-		clone.setVolume(settingsState.audio.sfxVolume * 0.4);
-		clone.play();
-	};
-
-	// ── Intro triggers from HUD ────────────────────────────────────────────────
-	$effect(() => {
-		if (catAIState.introMeowTrigger > 0) {
-			playMeow(catAIState.introMeowVolume);
-			catAIState.introMeowTrigger = 0;
-		}
-	});
-	$effect(() => {
-		if (catAIState.katzeIntroTrigger > 0) {
-			playKatzeIntro();
-			catAIState.katzeIntroTrigger = 0;
-		}
-	});
 
 	// ── Reset on game restart ─────────────────────────────────────────────────
 	$effect(() => {
@@ -1010,17 +985,6 @@
 				}}
 			/>
 		{/each}
-
-		<!-- Positional katze intro audio source -->
-		<PositionalAudio
-			src={KATZE_INTRO_URL}
-			refDistance={10}
-			maxDistance={30}
-			rolloffFactor={1.5}
-			oncreate={(a) => {
-				katzeIntroAudio = a;
-			}}
-		/>
 	</RigidBody>
 </T.Group>
 

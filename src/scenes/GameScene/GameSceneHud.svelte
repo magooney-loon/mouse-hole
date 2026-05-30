@@ -6,7 +6,6 @@
 	import PlayerStats from '$lib/PlayerStats.svelte';
 	import TouchControls from '$lib/TouchControls.svelte';
 	import { gameState, gameActions } from '$lib/gameState.svelte';
-	import { catAIState } from '$lib/catAI.svelte';
 	import {
 		decorationState,
 		DECORATION_LABELS,
@@ -55,9 +54,7 @@
 					class="bg-black/60 border border-white/20 rounded-xl px-3 py-1.5 backdrop-blur-sm flex flex-col items-center justify-center gap-0"
 					style="box-shadow: 2px 2px 0 #000;"
 				>
-					<span class="text-white/40 font-black uppercase tracking-widest" style="font-size:9px;"
-						>Time</span
-					>
+					<span class="text-white/40 font-black uppercase tracking-widest" style="font-size:9px;">Time</span>
 					<span class="text-white font-black text-xl tabular-nums leading-none">
 						{String(Math.floor(gameState.elapsed / 60)).padStart(2, '0')}:{String(
 							Math.floor(gameState.elapsed % 60)
@@ -70,15 +67,10 @@
 					class="bg-black/60 border border-purple-400/40 rounded-xl px-3 py-1.5 backdrop-blur-sm flex flex-col items-center justify-center gap-0.5"
 					style="box-shadow: 2px 2px 0 #000;"
 				>
-					<span
-						class="text-purple-300/60 font-black uppercase tracking-widest"
-						style="font-size:9px;">Items</span
-					>
+					<span class="text-purple-300/60 font-black uppercase tracking-widest" style="font-size:9px;">Items</span>
 					<div class="flex items-center gap-0.5">
 						{#each { length: DECORATION_TOTAL } as _, i}
-							<span class="text-sm"
-								>{decorationState.delivered[i] ? DECORATION_ICONS[i] : '⚪'}</span
-							>
+							<span class="text-sm">{decorationState.delivered[i] ? DECORATION_ICONS[i] : '⚪'}</span>
 						{/each}
 					</div>
 				</div>
@@ -239,9 +231,7 @@
 			>
 				<div class="flex items-center gap-6">
 					<div class="flex flex-col items-center gap-0.5">
-						<span class="text-white/40 font-black uppercase tracking-widest text-xs"
-							>Total Time</span
-						>
+						<span class="text-white/40 font-black uppercase tracking-widest text-xs">Total Time</span>
 						<span class="text-white font-black text-2xl tabular-nums leading-none">
 							{String(Math.floor(gameState.elapsed / 60)).padStart(2, '0')}:{String(
 								Math.floor(gameState.elapsed % 60)
@@ -265,15 +255,9 @@
 					onclick={() => {
 						soundActions.playClick();
 						gameActions.start();
-						catAIState.katzeIntroTrigger++;
-						setTimeout(() => {
-							catAIState.introMeowVolume = 1.0;
-							catAIState.introMeowTrigger++;
-						}, 2000);
-						setTimeout(() => {
-							catAIState.introMeowVolume = 1.0;
-							catAIState.introMeowTrigger++;
-						}, 5000);
+						soundActions.playKatzeIntro();
+						setTimeout(() => soundActions.playRandomMeow(), 2000);
+						setTimeout(() => soundActions.playRandomMeow(), 5000);
 					}}
 					class="w-full py-4 text-xl font-black rounded-xl cursor-pointer
 					       bg-amber-400 text-black border-4 border-black
@@ -332,27 +316,21 @@
 					onclick={() => {
 						soundActions.playClick();
 						gameActions.start();
-						catAIState.katzeIntroTrigger++;
-						setTimeout(() => {
-							catAIState.introMeowVolume = 1.0;
-							catAIState.introMeowTrigger++;
-						}, 2000);
-						setTimeout(() => {
-							catAIState.introMeowVolume = 1.0;
-							catAIState.introMeowTrigger++;
-						}, 5000);
+						soundActions.playKatzeIntro();
+						setTimeout(() => soundActions.playRandomMeow(), 2000);
+						setTimeout(() => soundActions.playRandomMeow(), 5000);
 					}}
 					class="w-full py-4 text-xl font-black rounded-xl cursor-pointer
 					       bg-amber-400 text-black border-4 border-black
 					       transition-all duration-100
 					hover:translate-x-0.5 hover:translate-y-0.5
-									       active:translate-x-1 active:translate-y-1"
+										       active:translate-x-1 active:translate-y-1"
 					style="box-shadow: 6px 6px 0 #000;"
 					onmousedown={(e) => (e.currentTarget.style.boxShadow = '2px 2px 0 #000')}
 					onmouseup={(e) => (e.currentTarget.style.boxShadow = '6px 6px 0 #000')}
 					onmouseleave={(e) => (e.currentTarget.style.boxShadow = '6px 6px 0 #000')}
 				>
-					🚀 Try Again
+					🔄 Try Again
 				</button>
 
 				<button
