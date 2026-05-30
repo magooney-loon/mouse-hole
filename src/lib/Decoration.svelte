@@ -26,6 +26,7 @@
 	const PUSH_DIST = 0.55; // how far in front of mouse to target
 	const IMPACT_THRESHOLD = 30; // contact force threshold to play sound
 	const IMPACT_COOLDOWN = 0.35; // seconds between impact sounds
+	const SPAWN_Y_OFFSET = 0.2; // extra clearance above surface to prevent clipping
 	const WALL_CHECK_DIST = 0.16; // ray length for tunnel guard (ball radius 0.1 + 0.06 margin)
 	const STUCK_SPEED = 0.5; // m/s — below this while dist > STUCK_DIST = stuck
 	const STUCK_DIST = 0.25; // m from target while checking stuck
@@ -105,7 +106,10 @@
 
 	const resetBody = () => {
 		if (!decorBody) return;
-		decorBody.setTranslation({ x: position[0], y: position[1], z: position[2] }, true);
+		decorBody.setTranslation(
+			{ x: position[0], y: position[1] + SPAWN_Y_OFFSET, z: position[2] },
+			true
+		);
 		decorBody.setLinvel({ x: 0, y: 0, z: 0 }, true);
 		decorBody.setAngvel({ x: 0, y: 0, z: 0 }, true);
 	};
@@ -285,7 +289,15 @@
 					{ x: pos.x, y: pos.y + 0.05, z: pos.z },
 					{ x: nx, y: 0, z: nz }
 				);
-				const wallHit = world.castRay(wallRay, WALL_CHECK_DIST, false, undefined, undefined, undefined, decorBody);
+				const wallHit = world.castRay(
+					wallRay,
+					WALL_CHECK_DIST,
+					false,
+					undefined,
+					undefined,
+					undefined,
+					decorBody
+				);
 
 				if (!wallHit) {
 					const speed = Math.min(dist * 13, DRAG_SPEED);
@@ -371,7 +383,7 @@
 	ccd
 	oncreate={(rb) => {
 		decorBody = rb;
-		rb.setTranslation({ x: position[0], y: position[1], z: position[2] }, true);
+		rb.setTranslation({ x: position[0], y: position[1] + SPAWN_Y_OFFSET, z: position[2] }, true);
 	}}
 >
 	<Collider
