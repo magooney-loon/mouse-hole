@@ -2,7 +2,7 @@
 	import { onDestroy } from 'svelte';
 	import { T, useTask } from '@threlte/core';
 	import { RigidBody, Collider, useRapier } from '@threlte/rapier';
-	import { useGltf } from '@threlte/extras';
+	import { useGltf, useGltfAnimations } from '@threlte/extras';
 	import { inputQueries, advanceInputFrame } from '$extensions/input/input.svelte';
 	import { tickGameState, gameState } from '$lib/gameState.svelte';
 	import {
@@ -14,9 +14,30 @@
 	import { decorationState } from '$lib/decorationState.svelte';
 	import { soundActions } from '$core/globalAudio.svelte';
 	import { BASE_URL } from '$extensions/settings/settings.svelte';
+	import { LoopRepeat } from 'three';
 	import * as THREE from 'three';
 
 	const gltf = useGltf(`${BASE_URL}models/stages/mouse.glb`);
+	const { actions } = useGltfAnimations(gltf);
+
+	let currentAnim: string | null = null;
+
+	const playAnim = (name: string) => {
+		if (name === currentAnim) return;
+		const act = $actions?.[name];
+		if (!act) return;
+		if (currentAnim) {
+			const prev = $actions?.[currentAnim];
+			if (prev) prev.fadeOut(0.2);
+		}
+		act.reset().setLoop(LoopRepeat, Infinity).fadeIn(0.2).play();
+		currentAnim = name;
+	};
+
+	$effect(() => {
+		if (!$actions) return;
+		playAnim('Idle');
+	});
 
 	const { world, rapier } = useRapier();
 
@@ -42,6 +63,7 @@
 			curVelZ = 0;
 			camInitialized = false;
 			airTime = 0;
+			currentAnim = null;
 		}
 	});
 
@@ -257,6 +279,13 @@
 		soundActions.setWalkState(
 			!grounded || !moving ? 'stopped' : sprinting ? 'sprinting' : 'walking'
 		);
+
+		// Animation switching
+		if (moving && grounded) {
+			playAnim('run');
+		} else {
+			playAnim('Idle');
+		}
 
 		advanceInputFrame();
 	});
