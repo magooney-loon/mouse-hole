@@ -13,7 +13,7 @@
 
 	const { state: soundState } = useSound();
 	const { world } = useRapier();
-	const POS_URL = `${BASE_URL}sounds/positional.mp3`;
+	const POS_URL = `${BASE_URL}sounds/positional.ogg`;
 	const mountId = crypto.randomUUID().slice(0, 8);
 
 	// Icosahedron

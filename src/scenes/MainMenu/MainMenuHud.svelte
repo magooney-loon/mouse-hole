@@ -5,7 +5,6 @@
 	import SettingsHud from '$scenes/SettingsHud.svelte';
 
 	let showSettings = $state(false);
-	let showHowToPlay = $state(false);
 
 	const btnBase = `w-full font-black rounded-xl cursor-pointer border-4 border-black
 	                 transition-all duration-100
@@ -50,34 +49,6 @@
 				{/each}
 			</div>
 
-			<!-- How to Play expanded panel -->
-			{#if showHowToPlay}
-				<div
-					class="bg-amber-950/70 border-4 border-black rounded-xl p-5 text-white flex flex-col gap-3"
-					style="box-shadow: 4px 4px 0 #000;"
-				>
-					<p class="m-0 text-sm font-black text-amber-300 uppercase tracking-wide">🏠 You are a mouse.</p>
-					<p class="m-0 text-sm text-white/70 leading-relaxed">
-						<strong class="text-amber-300 font-black">Hunger drains</strong> while you're outside your hole.
-						Grab food and eat it on the spot — unless the cat is hunting you.
-					</p>
-					<p class="m-0 text-sm text-white/70 leading-relaxed">
-						A <strong class="text-red-400 font-black">cat</strong> patrols the rooms.
-						Walking is silent. Sprinting is loud. Break its sight line to lose it.
-					</p>
-					<p class="m-0 text-sm text-white/70 leading-relaxed">
-						Find <strong class="text-amber-300 font-black">cosmetic items</strong> and carry them back to your hole.
-						<strong class="text-amber-300 font-black">Collect them all</strong> to win.
-					</p>
-					<button
-						onclick={() => { soundActions.playClick(); showHowToPlay = false; }}
-						class="self-end text-xs text-amber-400/70 hover:text-amber-300 transition-colors cursor-pointer font-black underline"
-					>
-						Got it!
-					</button>
-				</div>
-			{/if}
-
 			<!-- Buttons -->
 			<div class="flex flex-col gap-3">
 				<button
@@ -99,16 +70,19 @@
 				</button>
 
 				<div class="grid grid-cols-2 gap-3">
-					<button
-						onclick={() => { soundActions.playClick(); showHowToPlay = !showHowToPlay; }}
-						class="{btnBase} py-3 text-base bg-white/10 text-white"
+					<a
+						href="https://github.com/magooney-loon/mouse-hole"
+						target="_blank"
+						rel="noopener noreferrer"
+						onclick={() => soundActions.playClick()}
+						class="{btnBase} py-3 text-base bg-white/10 text-white text-center"
 						style="box-shadow: 4px 4px 0 #000;"
 						onmousedown={(e) => (e.currentTarget.style.boxShadow = '1px 1px 0 #000')}
 						onmouseup={(e) => (e.currentTarget.style.boxShadow = '4px 4px 0 #000')}
 						onmouseleave={(e) => (e.currentTarget.style.boxShadow = '4px 4px 0 #000')}
 					>
-						📖 How to Play
-					</button>
+						🐙 Source Code
+					</a>
 
 					<button
 						onclick={() => { soundActions.playClick(); showSettings = true; }}

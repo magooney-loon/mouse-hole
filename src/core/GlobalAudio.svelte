@@ -12,22 +12,22 @@
 	import { soundTriggers } from './globalAudio.svelte';
 
 	// ── URLs ──────────────────────────────────────────────────────────────────
-	const AMBIENCE_URL       = `${BASE_URL}sounds/ambience.mp3`;
-	const CLICK_URL          = `${BASE_URL}sounds/click.mp3`;
-	const SWOOSH_URL         = `${BASE_URL}sounds/swoosh.mp3`;
-	const MAIN_MENU_URL      = `${BASE_URL}sounds/music/main_menu.mp3`;
-	const GAME_1_URL         = `${BASE_URL}sounds/music/main_1.mp3`;
-	const GAME_2_URL         = `${BASE_URL}sounds/music/main_2.mp3`;
-	const KATZE_INTRO_URL    = `${BASE_URL}sounds/sfx/katze_voice_intro.mp3`;
-	const KATZE_WIN_URL      = `${BASE_URL}sounds/sfx/katze_voice_win.mp3`;
-	const MOUSE_GAMEOVER_URL = `${BASE_URL}sounds/sfx/mouse_gameover.mp3`;
-	const MOUSE_JUMP_URL     = `${BASE_URL}sounds/sfx/mouse_jump.mp3`;
-	const MOUSE_WALKING_URL  = `${BASE_URL}sounds/sfx/mouse_walking.mp3`;
+	const AMBIENCE_URL       = `${BASE_URL}sounds/ambience.ogg`;
+	const CLICK_URL          = `${BASE_URL}sounds/click.ogg`;
+	const SWOOSH_URL         = `${BASE_URL}sounds/swoosh.ogg`;
+	const MAIN_MENU_URL      = `${BASE_URL}sounds/music/main_menu.ogg`;
+	const GAME_1_URL         = `${BASE_URL}sounds/music/main_1.ogg`;
+	const GAME_2_URL         = `${BASE_URL}sounds/music/main_2.ogg`;
+	const KATZE_INTRO_URL    = `${BASE_URL}sounds/sfx/katze_voice_intro.ogg`;
+	const KATZE_WIN_URL      = `${BASE_URL}sounds/sfx/katze_voice_win.ogg`;
+	const MOUSE_GAMEOVER_URL = `${BASE_URL}sounds/sfx/mouse_gameover.ogg`;
+	const MOUSE_JUMP_URL     = `${BASE_URL}sounds/sfx/mouse_jump.ogg`;
+	const MOUSE_WALKING_URL  = `${BASE_URL}sounds/sfx/mouse_walking.ogg`;
 	const MEOW_URLS = [
-		`${BASE_URL}sounds/sfx/meow_1.mp3`,
-		`${BASE_URL}sounds/sfx/meow_2.mp3`,
-		`${BASE_URL}sounds/sfx/meow_3.mp3`,
-		`${BASE_URL}sounds/sfx/meow_4.mp3`,
+		`${BASE_URL}sounds/sfx/meow_1.ogg`,
+		`${BASE_URL}sounds/sfx/meow_2.ogg`,
+		`${BASE_URL}sounds/sfx/meow_3.ogg`,
+		`${BASE_URL}sounds/sfx/meow_4.ogg`,
 	];
 
 	// ── Audio refs ────────────────────────────────────────────────────────────
