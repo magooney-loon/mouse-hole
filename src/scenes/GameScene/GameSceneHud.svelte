@@ -28,6 +28,27 @@
 		/>
 	</div>
 
+	<!-- Cheese interact prompt -->
+	{#if gameState.status === 'playing' && gameState.cheeseInRange}
+		<div
+			class="absolute bottom-20 left-1/2 -translate-x-1/2"
+			transition:fly={{ y: 8, duration: 160 }}
+		>
+			<div
+				class="flex items-center gap-2.5 bg-black/70 border-2 border-amber-400/60 rounded-xl px-4 py-2.5 backdrop-blur-sm"
+				style="box-shadow: 0 0 12px #f5c21840;"
+			>
+				<span class="text-lg">🧀</span>
+				<span class="text-white/80 font-bold text-sm">Press</span>
+				<kbd
+					class="bg-amber-400 text-black border-2 border-black rounded px-1.5 py-0.5 font-black text-xs leading-none"
+					style="box-shadow: 2px 2px 0 #000;"
+				>F</kbd>
+				<span class="text-white/80 font-bold text-sm">to eat cheese</span>
+			</div>
+		</div>
+	{/if}
+
 	<!-- Intro tutorial overlay -->
 	{#if gameState.status === 'starting'}
 		<div

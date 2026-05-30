@@ -7,7 +7,8 @@ export const gameState = $state({
 	startTimer: 0,
 	hunger: 80,
 	stamina: 100,
-	sound: 0
+	sound: 0,
+	cheeseInRange: false
 });
 
 export const gameActions = {

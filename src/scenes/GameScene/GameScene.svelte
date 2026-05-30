@@ -3,6 +3,7 @@
 	import { Collider } from '@threlte/rapier';
 	import Mouse from '$lib/Mouse.svelte';
 	import CatAI from '$lib/CatAI.svelte';
+	import Cheese from '$lib/Cheese.svelte';
 </script>
 
 <!-- Static floor placeholder -->
@@ -15,3 +16,6 @@
 </T.Group>
 <Mouse />
 <CatAI />
+<Cheese position={[1.29, 0, 2.14]} />
+<Cheese position={[8.127, 0, 1.407]} />
+<Cheese position={[6.352, 0, -7.188]} />
