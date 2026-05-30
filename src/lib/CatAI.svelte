@@ -168,7 +168,7 @@
 	const isGrounded = (): boolean => {
 		const t = catBody.translation();
 		// Cast from the bottom of the cat's collider (y - halfHeight)
-		const ray = new rapier.Ray({ x: t.x, y: t.y - 0.48, z: t.z }, { x: 0, y: -1, z: 0 });
+		const ray = new rapier.Ray({ x: t.x, y: t.y - 0.3, z: t.z }, { x: 0, y: -1, z: 0 });
 		return !!world.castRay(ray, GROUND_RAY_LEN, true, undefined, undefined, undefined, catBody);
 	};
 
@@ -808,16 +808,16 @@
 			catBody = rb;
 		}}
 	>
-		<Collider shape="cuboid" args={[0.36, 0.48, 0.6]} />
+		<Collider shape="cuboid" args={[0.36, 0.3, 0.6]} />
 
 		<!-- Debug: collider visualization (remove when done) -->
 		<T.Mesh>
-			<T.BoxGeometry args={[0.72, 0.96, 1.2]} />
+			<T.BoxGeometry args={[0.72, 0.6, 1.2]} />
 			<T.MeshBasicMaterial color={0xff0000} wireframe transparent opacity={0.5} />
 		</T.Mesh>
 
 		{#if $gltf}
-			<T.Group scale={0.02} position={[0, -0.45, 0.35]} rotation={[0, Math.PI, 0]}>
+			<T.Group scale={0.02} position={[0, -0.35, 0.35]} rotation={[0, Math.PI, 0]}>
 				<T is={$gltf.scene} />
 			</T.Group>
 		{/if}
