@@ -8,13 +8,16 @@
 
 	interface Props {
 		position: [number, number, number];
-		healAmount?: number;
-		respawnDelay?: number;
 	}
 
-	let { position, healAmount = 30, respawnDelay = 15 }: Props = $props();
+	let { position }: Props = $props();
 
-	const INTERACT_RADIUS = 0.6;
+	// Randomised per instance at mount — each cheese feels different
+	const healAmount = 15 + Math.random() * 30;       // 15–45 hp
+	const respawnDelay = 10 + Math.random() * 20;     // 10–30 s
+	const scale = 0.7 + Math.random() * 0.7;          // 0.7–1.4× size
+
+	const INTERACT_RADIUS = 0.5 + scale * 0.15;       // slightly bigger hitbox for big cheese
 
 	let eaten = $state(false);
 	let respawnTimer = 0;
@@ -78,6 +81,7 @@
 
 <T.Group
 	position={[position[0], 0.05, position[2]]}
+	scale={[scale, scale, scale]}
 	visible={!eaten}
 	oncreate={(ref) => {
 		groupRef = ref;

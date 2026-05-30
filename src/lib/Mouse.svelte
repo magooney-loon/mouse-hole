@@ -43,6 +43,7 @@
 	let curVelX = 0;
 	let curVelZ = 0;
 	let lastHitRequestId = 0;
+	let posLogTimer = 0;
 
 	const CAM_DISTANCE = 0.69;
 	const CAM_HEIGHT = 0.2;
@@ -142,6 +143,13 @@
 		mouseSharedPos.x = t.x;
 		mouseSharedPos.y = t.y;
 		mouseSharedPos.z = t.z;
+
+		posLogTimer -= delta;
+		if (posLogTimer <= 0) {
+			posLogTimer = 2;
+			console.log(`[mouse pos] x: ${t.x.toFixed(3)}, y: ${t.y.toFixed(3)}, z: ${t.z.toFixed(3)}`);
+		}
+
 		const eyeY = t.y + CAM_LOOK_HEIGHT;
 		const backX = Math.sin(facingAngle);
 		const backZ = Math.cos(facingAngle);

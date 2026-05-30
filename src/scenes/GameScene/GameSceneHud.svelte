@@ -28,6 +28,21 @@
 		/>
 	</div>
 
+	<!-- Timer — top right -->
+	{#if gameState.status === 'playing' || gameState.status === 'game_over'}
+		<div class="absolute top-6 right-6">
+			<div
+				class="bg-black/60 border-2 border-white/20 rounded-xl px-4 py-2 backdrop-blur-sm flex flex-col items-center gap-0.5"
+				style="box-shadow: 3px 3px 0 #000;"
+			>
+				<span class="text-white/40 font-black uppercase tracking-widest text-xs">Survived</span>
+				<span class="text-white font-black text-2xl tabular-nums leading-none">
+					{String(Math.floor(gameState.elapsed / 60)).padStart(2, '0')}:{String(Math.floor(gameState.elapsed % 60)).padStart(2, '0')}
+				</span>
+			</div>
+		</div>
+	{/if}
+
 	<!-- Cheese interact prompt -->
 	{#if gameState.status === 'playing' && gameState.cheeseInRange}
 		<div

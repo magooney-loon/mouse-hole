@@ -8,7 +8,8 @@ export const gameState = $state({
 	hunger: 80,
 	stamina: 100,
 	sound: 0,
-	cheeseInRange: false
+	cheeseInRange: false,
+	elapsed: 0
 });
 
 export const gameActions = {
@@ -18,6 +19,7 @@ export const gameActions = {
 		gameState.hunger = 80;
 		gameState.stamina = 100;
 		gameState.sound = 0;
+		gameState.elapsed = 0;
 	},
 	reset() {
 		gameState.status = 'idle';
@@ -25,6 +27,7 @@ export const gameActions = {
 		gameState.hunger = 80;
 		gameState.stamina = 100;
 		gameState.sound = 0;
+		gameState.elapsed = 0;
 	}
 };
 
@@ -42,6 +45,7 @@ export function tickGameState(
 
 	if (gameState.status !== 'playing') return;
 
+	gameState.elapsed += delta;
 	gameState.hunger = clamp(gameState.hunger - 0.5 * delta);
 	if (gameState.hunger <= 0) {
 		gameState.status = 'game_over';
