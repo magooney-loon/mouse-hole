@@ -22,7 +22,7 @@
 	let initialized = false;
 
 	const _desiredPos = new THREE.Vector3();
-	const _lookAt = new THREE.Vector3();
+
 	const _dir = new THREE.Vector3();
 	const _safePos = new THREE.Vector3();
 
@@ -40,8 +40,13 @@
 		if (segT >= 1) {
 			segT -= 1;
 			segIndex += direction;
-			if (segIndex >= PATH.length - 1) { segIndex = PATH.length - 1; direction = -1; }
-			else if (segIndex <= 0)          { segIndex = 0;               direction =  1; }
+			if (segIndex >= PATH.length - 1) {
+				segIndex = PATH.length - 1;
+				direction = -1;
+			} else if (segIndex <= 0) {
+				segIndex = 0;
+				direction = 1;
+			}
 		}
 
 		const from = PATH[segIndex];

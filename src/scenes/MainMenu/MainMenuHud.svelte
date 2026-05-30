@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { sceneActions } from '$extensions/scene/scene.svelte';
 	import { soundActions } from '$core/GlobalAudio.svelte';
+	import { gameActions } from '$lib/gameState.svelte';
 	import SettingsHud from '$scenes/SettingsHud.svelte';
 
 	let showSettings = $state(false);
@@ -80,7 +81,7 @@
 			<!-- Buttons -->
 			<div class="flex flex-col gap-3">
 				<button
-					onclick={() => { soundActions.playClick(); sceneActions.goToGameScene(); }}
+					onclick={() => { soundActions.playClick(); gameActions.start(); sceneActions.goToGameScene(); }}
 					class="{btnBase} py-4 text-xl bg-amber-400 text-black"
 					style="box-shadow: 6px 6px 0 #000;"
 					onmousedown={(e) => (e.currentTarget.style.boxShadow = '2px 2px 0 #000')}

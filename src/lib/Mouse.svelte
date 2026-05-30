@@ -3,6 +3,7 @@
 	import { T, useTask } from '@threlte/core';
 	import { RigidBody, Collider, useRapier } from '@threlte/rapier';
 	import { inputQueries, advanceInputFrame } from '$extensions/input/input.svelte';
+	import { tickGameState } from '$lib/gameState.svelte';
 	import * as THREE from 'three';
 
 	const { world, rapier } = useRapier();
@@ -132,6 +133,10 @@
 
 		_lookAt.set(lerp(t.x, fpX + fwdX, fpsW), lerp(eyeY, fpY, fpsW), lerp(t.z, fpZ + fwdZ, fpsW));
 		gameCam.lookAt(_lookAt);
+
+		const sprinting = inputQueries.isPressed('player1', 'sprint') && grounded;
+		const moving = Math.abs(move.x) > 0.1 || Math.abs(move.y) > 0.1;
+		tickGameState(delta, sprinting, moving, !grounded);
 
 		advanceInputFrame();
 	});
