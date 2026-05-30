@@ -8,7 +8,8 @@
 	import {
 		decorationState,
 		DECORATION_LABELS,
-		DECORATION_ICONS
+		DECORATION_ICONS,
+		DECORATION_TOTAL
 	} from '$lib/decorationState.svelte';
 
 	const countdown = $derived(Math.ceil(gameState.startTimer));
@@ -33,9 +34,8 @@
 		/>
 	</div>
 
-	<!-- Timer — top right -->
-	{#if gameState.status === 'playing' || gameState.status === 'game_over'}
-		<div class="absolute top-6 right-6">
+	<div class="absolute top-6 right-6 flex items-stretch gap-2">
+		{#if gameState.status === 'playing' || gameState.status === 'game_over'}
 			<div
 				class="bg-black/60 border-2 border-white/20 rounded-xl px-4 py-2 backdrop-blur-sm flex flex-col items-center gap-0.5"
 				style="box-shadow: 3px 3px 0 #000;"
@@ -47,8 +47,27 @@
 					).padStart(2, '0')}
 				</span>
 			</div>
-		</div>
-	{/if}
+		{/if}
+
+		<!-- Decoration score -->
+		{#if gameState.status === 'playing' || gameState.status === 'game_over'}
+			<div
+				class="bg-black/60 border-2 border-purple-400/40 rounded-xl px-4 py-2 backdrop-blur-sm flex flex-col items-center gap-1"
+				style="box-shadow: 3px 3px 0 #000;"
+			>
+				<span class="text-purple-300/60 font-black uppercase tracking-widest text-xs"
+					>Decorations</span
+				>
+				<div class="flex items-center gap-1">
+					{#each { length: DECORATION_TOTAL } as _, i}
+						<span class="text-base"
+							>{decorationState.delivered[i] ? DECORATION_ICONS[i] : '⚪'}</span
+						>
+					{/each}
+				</div>
+			</div>
+		{/if}
+	</div>
 
 	<!-- Carrying indicator — bottom center -->
 	{#if gameState.status === 'playing' && decorationState.carrying}
