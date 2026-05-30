@@ -205,9 +205,10 @@
 		groupRef.position.set(pos.x, pos.y, pos.z);
 		groupRef.rotation.y = decorBody.rotation().y; // follow physics tumble
 
-		// Floor circle follows XZ of body
+		// Floor circle follows body position (sits just under the ball on whatever surface it's on)
 		if (circleRef) {
 			circleRef.position.x = pos.x;
+			circleRef.position.y = pos.y - 0.09;
 			circleRef.position.z = pos.z;
 			circleRef.visible = !delivered;
 		}
