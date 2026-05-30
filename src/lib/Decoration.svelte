@@ -291,9 +291,9 @@
 					decorBody
 				);
 
-				console.log(
+				/* console.log(
 					`[deco drag] pos=(${pos.x.toFixed(2)},${pos.y.toFixed(2)},${pos.z.toFixed(2)}) target=(${tx.toFixed(2)},${tz.toFixed(2)}) dist=${dist.toFixed(3)} wallHit=${wallHit ? `t=${wallHit.timeOfImpact.toFixed(3)}` : 'none'} vel=(${vel.x.toFixed(2)},${vel.z.toFixed(2)})`
-				);
+				); */
 
 				if (!wallHit) {
 					const speed = Math.min(dist * 13, DRAG_SPEED);
@@ -301,8 +301,8 @@
 				} else {
 					// Wall between ball and target — only push up to the wall hit point
 					const safeDist = Math.max(0, wallHit.timeOfImpact - 0.12);
-					console.log(`[deco drag] WALL HIT safeDist=${safeDist.toFixed(3)}`);
-					if (safeDist > 0.04) {
+					/* 					console.log(`[deco drag] WALL HIT safeDist=${safeDist.toFixed(3)}`);
+					 */ if (safeDist > 0.04) {
 						const safeSpeed = Math.min(safeDist * 10, DRAG_SPEED);
 						decorBody.setLinvel({ x: nx * safeSpeed, y: vel.y, z: nz * safeSpeed }, true);
 					} else {
@@ -317,11 +317,11 @@
 			const currentSpeed = Math.sqrt(vel.x * vel.x + vel.z * vel.z);
 			if (dist > STUCK_DIST && currentSpeed < STUCK_SPEED && pickupCooldown <= 0) {
 				stuckTimer += delta;
-				console.log(
+				/* 	console.log(
 					`[deco drag] STUCK? timer=${stuckTimer.toFixed(2)} speed=${currentSpeed.toFixed(2)} dist=${dist.toFixed(3)}`
-				);
+				); */
 				if (stuckTimer > STUCK_TIME) {
-					console.log(`[deco drag] DROPPING AT MOUSE - was stuck`);
+					/* 	console.log(`[deco drag] DROPPING AT MOUSE - was stuck`); */
 					dropAtMouse();
 					return;
 				}
@@ -332,16 +332,16 @@
 			// Distance safety net — item somehow far away → also drop at mouse feet
 			// Floor safety net — ball fell below level → rescue at mouse feet
 			if (pos.y < -0.5) {
-				console.log(`[deco drag] DROPPING AT MOUSE - fell below level (y=${pos.y.toFixed(2)})`);
-				dropAtMouse();
+				/* 				console.log(`[deco drag] DROPPING AT MOUSE - fell below level (y=${pos.y.toFixed(2)})`);
+				 */ dropAtMouse();
 				return;
 			}
 
 			const dragDx = mouseSharedPos.x - pos.x;
 			const dragDz = mouseSharedPos.z - pos.z;
 			if (Math.sqrt(dragDx * dragDx + dragDz * dragDz) > DRAG_MAX_DIST) {
-				console.log(`[deco drag] DROPPING AT MOUSE - too far from mouse`);
-				dropAtMouse();
+				/* 				console.log(`[deco drag] DROPPING AT MOUSE - too far from mouse`);
+				 */ dropAtMouse();
 				return;
 			}
 
