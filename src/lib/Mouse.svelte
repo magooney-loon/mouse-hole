@@ -33,6 +33,7 @@
 			mouseBody.setLinvel({ x: 0, y: 0, z: 0 }, true);
 			mouseBody.setAngvel({ x: 0, y: 0, z: 0 }, true);
 			facingAngle = 4.341;
+			orbitAngle = facingAngle;
 			curVelX = 0;
 			curVelZ = 0;
 			camInitialized = false;
@@ -56,6 +57,10 @@
 	const CAM_DISTANCE = 0.69;
 	const CAM_HEIGHT = 0.2;
 	const CAM_LOOK_HEIGHT = 0.05;
+	const ORBIT_SPEED = 0.7; // rad/s during countdown
+	const ORBIT_DIST = 0.38;
+	const ORBIT_HEIGHT = 0.14;
+	let orbitAngle = 4.341;
 
 	const FPS_BLEND_START = 0.35;
 	const FPS_BLEND_END = 0.08;
@@ -174,45 +179,62 @@
 			console.log(`[mouse pos] x: ${t.x.toFixed(3)}, y: ${t.y.toFixed(3)}, z: ${t.z.toFixed(3)}`);
 		}
 
-		const eyeY = t.y + CAM_LOOK_HEIGHT;
-		const backX = Math.sin(facingAngle);
-		const backZ = Math.cos(facingAngle);
-
-		const dx = backX * CAM_DISTANCE;
-		const dy = CAM_HEIGHT;
-		const dz = backZ * CAM_DISTANCE;
-		const fullDist = Math.sqrt(dx * dx + dy * dy + dz * dz);
-		const dirX = dx / fullDist;
-		const dirY = dy / fullDist;
-		const dirZ = dz / fullDist;
-
-		const ray = new rapier.Ray({ x: t.x, y: eyeY, z: t.z }, { x: dirX, y: dirY, z: dirZ });
-		const hit = world.castRay(ray, fullDist, true, undefined, undefined, undefined, mouseBody);
-		const camDist = hit ? Math.max(0, hit.timeOfImpact - 0.08) : fullDist;
-
-		const tpX = t.x + dirX * camDist;
-		const tpY = eyeY + dirY * camDist;
-		const tpZ = t.z + dirZ * camDist;
-
-		const fpY = t.y + EYE_HEIGHT;
-		const eyeRay = new rapier.Ray({ x: t.x, y: fpY, z: t.z }, { x: fwdX, y: 0, z: fwdZ });
-		const eyeHit = world.castRay(eyeRay, EYE_FWD, true, undefined, undefined, undefined, mouseBody);
-		const eyeFwd = eyeHit ? Math.max(0, eyeHit.timeOfImpact - EYE_MARGIN) : EYE_FWD;
-		const fpX = t.x + fwdX * eyeFwd;
-		const fpZ = t.z + fwdZ * eyeFwd;
-
-		const fpsW = clamp01((FPS_BLEND_START - camDist) / (FPS_BLEND_START - FPS_BLEND_END));
-
-		_camDesired.set(lerp(tpX, fpX, fpsW), lerp(tpY, fpY, fpsW), lerp(tpZ, fpZ, fpsW));
-		if (!camInitialized) {
-			gameCam.position.copy(_camDesired);
-			camInitialized = true;
+		if (gameState.status === 'starting') {
+			// Cinematic orbit around the player during countdown
+			orbitAngle += delta * ORBIT_SPEED;
+			const ox = Math.sin(orbitAngle);
+			const oz = Math.cos(orbitAngle);
+			_camDesired.set(t.x + ox * ORBIT_DIST, t.y + ORBIT_HEIGHT, t.z + oz * ORBIT_DIST);
+			_lookAt.set(t.x, t.y + 0.08, t.z);
+			gameCam.lookAt(_lookAt);
+			if (!camInitialized) {
+				gameCam.position.copy(_camDesired);
+				camInitialized = true;
+			} else {
+				gameCam.position.lerp(_camDesired, Math.min(1, delta * 2.5));
+			}
 		} else {
-			gameCam.position.lerp(_camDesired, Math.min(1, delta * 10));
-		}
+			// Normal chase / FPS-blend camera
+			const eyeY = t.y + CAM_LOOK_HEIGHT;
+			const backX = Math.sin(facingAngle);
+			const backZ = Math.cos(facingAngle);
 
-		_lookAt.set(lerp(t.x, fpX + fwdX, fpsW), lerp(eyeY, fpY, fpsW), lerp(t.z, fpZ + fwdZ, fpsW));
-		gameCam.lookAt(_lookAt);
+			const cdx = backX * CAM_DISTANCE;
+			const cdy = CAM_HEIGHT;
+			const cdz = backZ * CAM_DISTANCE;
+			const fullDist = Math.sqrt(cdx * cdx + cdy * cdy + cdz * cdz);
+			const dirX = cdx / fullDist;
+			const dirY = cdy / fullDist;
+			const dirZ = cdz / fullDist;
+
+			const ray = new rapier.Ray({ x: t.x, y: eyeY, z: t.z }, { x: dirX, y: dirY, z: dirZ });
+			const hit = world.castRay(ray, fullDist, true, undefined, undefined, undefined, mouseBody);
+			const camDist = hit ? Math.max(0, hit.timeOfImpact - 0.08) : fullDist;
+
+			const tpX = t.x + dirX * camDist;
+			const tpY = eyeY + dirY * camDist;
+			const tpZ = t.z + dirZ * camDist;
+
+			const fpY = t.y + EYE_HEIGHT;
+			const eyeRay = new rapier.Ray({ x: t.x, y: fpY, z: t.z }, { x: fwdX, y: 0, z: fwdZ });
+			const eyeHit = world.castRay(eyeRay, EYE_FWD, true, undefined, undefined, undefined, mouseBody);
+			const eyeFwd = eyeHit ? Math.max(0, eyeHit.timeOfImpact - EYE_MARGIN) : EYE_FWD;
+			const fpX = t.x + fwdX * eyeFwd;
+			const fpZ = t.z + fwdZ * eyeFwd;
+
+			const fpsW = clamp01((FPS_BLEND_START - camDist) / (FPS_BLEND_START - FPS_BLEND_END));
+
+			_camDesired.set(lerp(tpX, fpX, fpsW), lerp(tpY, fpY, fpsW), lerp(tpZ, fpZ, fpsW));
+			if (!camInitialized) {
+				gameCam.position.copy(_camDesired);
+				camInitialized = true;
+			} else {
+				gameCam.position.lerp(_camDesired, Math.min(1, delta * 10));
+			}
+
+			_lookAt.set(lerp(t.x, fpX + fwdX, fpsW), lerp(eyeY, fpY, fpsW), lerp(t.z, fpZ + fwdZ, fpsW));
+			gameCam.lookAt(_lookAt);
+		}
 
 		const sprinting =
 			inputQueries.isPressed('player1', 'sprint') && grounded && gameState.stamina > 0;
