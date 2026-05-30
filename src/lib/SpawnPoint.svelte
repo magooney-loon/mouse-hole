@@ -124,55 +124,85 @@
 			houseGroupRef = ref;
 		}}
 	>
-		<!-- Roof -->
-		<T.Mesh position={[0, 0.04, 0]}>
-			<T.ConeGeometry args={[0.065, 0.08, 4]} />
-			<T.MeshStandardMaterial
-				color="#e8453c"
-				emissive="#e8453c"
-				emissiveIntensity={0.3}
-				flatShading
-			/>
+		<!-- Walls — centered at y=0, spans -0.04 to +0.04 -->
+		<T.Mesh>
+			<T.BoxGeometry args={[0.1, 0.08, 0.1]} />
+			<T.MeshStandardMaterial color="#fcd97d" emissive="#f59e0b" emissiveIntensity={0.2} flatShading />
 		</T.Mesh>
 
-		<!-- Walls -->
-		<T.Mesh position={[0, 0, 0]}>
-			<T.BoxGeometry args={[0.075, 0.06, 0.075]} />
-			<T.MeshStandardMaterial
-				color="#fbbf24"
-				emissive="#fbbf24"
-				emissiveIntensity={0.3}
-				flatShading
-			/>
+		<!-- Eave ledge — sits right at the top of the walls -->
+		<T.Mesh position={[0, 0.04, 0]}>
+			<T.BoxGeometry args={[0.115, 0.007, 0.115]} />
+			<T.MeshStandardMaterial color="#c0392b" emissive="#c0392b" emissiveIntensity={0.15} flatShading />
+		</T.Mesh>
+
+		<!-- Hip roof (4-sided pyramid)
+		     Rotated 45° on Y so corners align with the box corners.
+		     Positioned so its base sits on top of the walls (y=0.04). -->
+		<T.Mesh position={[0, 0.078, 0]} rotation={[0, Math.PI / 4, 0]}>
+			<T.ConeGeometry args={[0.1, 0.076, 4]} />
+			<T.MeshStandardMaterial color="#e8453c" emissive="#e8453c" emissiveIntensity={0.3} flatShading />
 		</T.Mesh>
 
 		<!-- Door -->
-		<T.Mesh position={[0, -0.015, 0.038]}>
-			<T.BoxGeometry args={[0.025, 0.035, 0.002]} />
-			<T.MeshStandardMaterial
-				color="#9B7520"
-				emissive="#fbbf24"
-				emissiveIntensity={0.15}
-				flatShading
-			/>
+		<T.Mesh position={[0, -0.018, 0.051]}>
+			<T.BoxGeometry args={[0.03, 0.046, 0.002]} />
+			<T.MeshStandardMaterial color="#7B4F2E" emissive="#7B4F2E" emissiveIntensity={0.1} flatShading />
+		</T.Mesh>
+
+		<!-- Door arch (half-cylinder on top of door) -->
+		<T.Mesh position={[0, 0.005, 0.051]} rotation={[Math.PI / 2, 0, 0]}>
+			<T.CylinderGeometry args={[0.015, 0.015, 0.002, 8, 1, false, 0, Math.PI]} />
+			<T.MeshStandardMaterial color="#7B4F2E" flatShading />
 		</T.Mesh>
 
 		<!-- Window left -->
-		<T.Mesh position={[-0.022, 0.005, 0.038]}>
-			<T.BoxGeometry args={[0.015, 0.015, 0.002]} />
-			<T.MeshStandardMaterial color="#87CEEB" emissive="#87CEEB" emissiveIntensity={0.4} />
+		<T.Mesh position={[-0.028, 0.008, 0.051]}>
+			<T.BoxGeometry args={[0.022, 0.022, 0.002]} />
+			<T.MeshStandardMaterial color="#87CEEB" emissive="#87CEEB" emissiveIntensity={0.55} />
+		</T.Mesh>
+		<!-- Window left cross H -->
+		<T.Mesh position={[-0.028, 0.008, 0.052]}>
+			<T.BoxGeometry args={[0.022, 0.002, 0.001]} />
+			<T.MeshStandardMaterial color="#5a9ab5" />
+		</T.Mesh>
+		<!-- Window left cross V -->
+		<T.Mesh position={[-0.028, 0.008, 0.052]}>
+			<T.BoxGeometry args={[0.002, 0.022, 0.001]} />
+			<T.MeshStandardMaterial color="#5a9ab5" />
 		</T.Mesh>
 
 		<!-- Window right -->
-		<T.Mesh position={[0.022, 0.005, 0.038]}>
-			<T.BoxGeometry args={[0.015, 0.015, 0.002]} />
-			<T.MeshStandardMaterial color="#87CEEB" emissive="#87CEEB" emissiveIntensity={0.4} />
+		<T.Mesh position={[0.028, 0.008, 0.051]}>
+			<T.BoxGeometry args={[0.022, 0.022, 0.002]} />
+			<T.MeshStandardMaterial color="#87CEEB" emissive="#87CEEB" emissiveIntensity={0.55} />
+		</T.Mesh>
+		<!-- Window right cross H -->
+		<T.Mesh position={[0.028, 0.008, 0.052]}>
+			<T.BoxGeometry args={[0.022, 0.002, 0.001]} />
+			<T.MeshStandardMaterial color="#5a9ab5" />
+		</T.Mesh>
+		<!-- Window right cross V -->
+		<T.Mesh position={[0.028, 0.008, 0.052]}>
+			<T.BoxGeometry args={[0.002, 0.022, 0.001]} />
+			<T.MeshStandardMaterial color="#5a9ab5" />
 		</T.Mesh>
 
-		<!-- Chimney -->
-		<T.Mesh position={[0.025, 0.07, -0.01]}>
-			<T.BoxGeometry args={[0.015, 0.04, 0.015]} />
+		<!-- Front step -->
+		<T.Mesh position={[0, -0.044, 0.057]}>
+			<T.BoxGeometry args={[0.04, 0.006, 0.012]} />
+			<T.MeshStandardMaterial color="#c8a96e" flatShading />
+		</T.Mesh>
+
+		<!-- Chimney shaft — base inside roof, top pokes above peak -->
+		<T.Mesh position={[0.03, 0.1, -0.02]}>
+			<T.BoxGeometry args={[0.02, 0.072, 0.02]} />
 			<T.MeshStandardMaterial color="#8B4513" flatShading />
+		</T.Mesh>
+		<!-- Chimney cap -->
+		<T.Mesh position={[0.03, 0.138, -0.02]}>
+			<T.BoxGeometry args={[0.028, 0.008, 0.028]} />
+			<T.MeshStandardMaterial color="#5C2D0A" flatShading />
 		</T.Mesh>
 	</T.Group>
 </T.Group>
