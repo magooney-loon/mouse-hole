@@ -63,6 +63,17 @@
 	const CAT_CHASE_SPEED = 3.8;
 	const GROUND_RAY_LEN = 0.12;
 
+	// Safe zone — cat loses interest when mouse is here (spawn / mouse hole)
+	const SAFE_ZONE_X      = 1.936;
+	const SAFE_ZONE_Z      = -1.894;
+	const SAFE_ZONE_RADIUS = 1.1;
+
+	const mouseInSafeZone = (): boolean => {
+		const dx = mouseSharedPos.x - SAFE_ZONE_X;
+		const dz = mouseSharedPos.z - SAFE_ZONE_Z;
+		return dx * dx + dz * dz < SAFE_ZONE_RADIUS * SAFE_ZONE_RADIUS;
+	};
+
 	const CAT_SIGHT_RANGE = 9;
 	const CAT_SIGHT_HALF_ANGLE = Math.PI / 4; // 90° total FOV
 	const CAT_HEAR_BASE = 2;
@@ -501,8 +512,20 @@
 
 		meowCooldown = Math.max(0, meowCooldown - delta);
 		catchCooldown = Math.max(0, catchCooldown - delta);
-		const sees = canSee();
-		const hears = canHear();
+		const safe  = mouseInSafeZone();
+		const sees  = !safe && canSee();
+		const hears = !safe && canHear();
+
+		// If mouse reached safe zone, cat gives up and wanders off
+		if (safe && (catAIState.mode === 'chase' || catAIState.mode === 'search')) {
+			catAIState.mode       = 'patrol';
+			catAIState.alertLevel = 0;
+			catAIState.lastKnownPos = null;
+			noSightTimer  = 0;
+			searchTimer   = 0;
+			roamTargetAngle = pickRoamDir(t);
+			roamTimer = ROAM_DIR_MIN_TIME;
+		}
 
 		// ── State machine ──────────────────────────────────────────────────────
 		switch (catAIState.mode) {
