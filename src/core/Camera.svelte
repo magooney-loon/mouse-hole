@@ -29,3 +29,4 @@
 	shadow.mapSize.height={2048}
 	oncreate={(ref) => ref.shadow.camera.updateProjectionMatrix()}
 />
+<T.AmbientLight intensity={1.2} />

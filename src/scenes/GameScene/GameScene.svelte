@@ -185,8 +185,6 @@
 	}}
 />
 
-<T.AmbientLight intensity={1.2} />
-
 <!-- DEBUG: draws all collider wireframes (check the mouse collider size). Remove later. -->
 <Debug />
 
