@@ -4,7 +4,12 @@
 	import { RigidBody, Collider, useRapier } from '@threlte/rapier';
 	import { inputQueries, advanceInputFrame } from '$extensions/input/input.svelte';
 	import { tickGameState, gameState } from '$lib/gameState.svelte';
-	import { mouseHitRequest, mouseSharedPos, mouseSharedFacing, mouseBodyRef } from '$lib/catAI.svelte';
+	import {
+		mouseHitRequest,
+		mouseSharedPos,
+		mouseSharedFacing,
+		mouseBodyRef
+	} from '$lib/catAI.svelte';
 	import { decorationState } from '$lib/decorationState.svelte';
 	import { soundActions } from '$core/globalAudio.svelte';
 	import * as THREE from 'three';
@@ -31,6 +36,7 @@
 			curVelX = 0;
 			curVelZ = 0;
 			camInitialized = false;
+			airTime = 0;
 		}
 	});
 
@@ -45,6 +51,7 @@
 	let curVelZ = 0;
 	let lastHitRequestId = 0;
 	let posLogTimer = 0;
+	let airTime = 0;
 
 	const CAM_DISTANCE = 0.69;
 	const CAM_HEIGHT = 0.2;
@@ -98,7 +105,9 @@
 			const canSprint = inputQueries.isPressed('player1', 'sprint') && gameState.stamina > 0;
 			speed = (canSprint ? SPRINT_SPEED : WALK_SPEED) * carryPenalty;
 			takeoffSpeed = speed;
+			airTime = 0;
 		} else {
+			airTime += delta;
 			speed = takeoffSpeed;
 		}
 
@@ -119,6 +128,11 @@
 		const targetVX = (fwdX * move.y + rightX * strafe) * speed;
 		const targetVZ = (fwdZ * move.y + rightZ * strafe) * speed;
 
+		// Air decay: linearly reduce control over 1 second, then target drops to 0
+		const airControl = grounded ? 1 : Math.max(0, 1 - airTime);
+		const finalTargetVX = targetVX * airControl;
+		const finalTargetVZ = targetVZ * airControl;
+
 		const k = Math.min(1, delta * (grounded ? 16 : 5));
 
 		// Sync tracking velocity toward actual physics velocity (handles wall collisions)
@@ -126,8 +140,8 @@
 		curVelX += (vel.x - curVelX) * Math.min(1, delta * 10);
 		curVelZ += (vel.z - curVelZ) * Math.min(1, delta * 10);
 
-		curVelX += (targetVX - curVelX) * k;
-		curVelZ += (targetVZ - curVelZ) * k;
+		curVelX += (finalTargetVX - curVelX) * k;
+		curVelZ += (finalTargetVZ - curVelZ) * k;
 
 		let velY = vel.y;
 		if (inputQueries.wasPressed('player1', 'jump') && grounded) {
@@ -151,7 +165,7 @@
 		mouseSharedPos.z = t.z;
 
 		const _szDx = t.x - 1.936;
-		const _szDz = t.z - (-1.894);
+		const _szDz = t.z - -1.894;
 		gameState.inSafeZone = _szDx * _szDx + _szDz * _szDz < 1.1 * 1.1;
 
 		posLogTimer -= delta;
@@ -200,7 +214,8 @@
 		_lookAt.set(lerp(t.x, fpX + fwdX, fpsW), lerp(eyeY, fpY, fpsW), lerp(t.z, fpZ + fwdZ, fpsW));
 		gameCam.lookAt(_lookAt);
 
-		const sprinting = inputQueries.isPressed('player1', 'sprint') && grounded && gameState.stamina > 0;
+		const sprinting =
+			inputQueries.isPressed('player1', 'sprint') && grounded && gameState.stamina > 0;
 		const strafing = Math.abs(strafe) > 0.1;
 		const moving = Math.abs(move.y) > 0.1 || strafing;
 		tickGameState(delta, sprinting, moving, !grounded);
@@ -235,7 +250,11 @@
 			mouseBodyRef.current = rb;
 		}}
 	>
-		<Collider shape="cuboid" args={[0.1, 0.1, 0.16]} oncreate={(c) => c.setCollisionGroups(0xFFFD0001)} />
+		<Collider
+			shape="cuboid"
+			args={[0.1, 0.1, 0.16]}
+			oncreate={(c) => c.setCollisionGroups(0xfffd0001)}
+		/>
 
 		<T.Object3D
 			oncreate={(ref) => {
