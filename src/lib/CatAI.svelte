@@ -17,7 +17,28 @@
 	// ── Model & animation ─────────────────────────────────────────────────────
 	const gltf = useGltf(`${BASE_URL}models/stages/katze.glb`);
 	const { actions } = useGltfAnimations(gltf);
-	let anim: any = null;
+
+	let currentAnim: string | null = null;
+	let activeAction: any = null;
+
+	const playAnim = (name: string, loop = true) => {
+		if (name === currentAnim) return;
+		const act = $actions?.[name];
+		if (!act) return;
+		if (currentAnim) {
+			const prev = $actions?.[currentAnim];
+			if (prev) prev.fadeOut(0.25);
+		}
+		act.reset().fadeIn(0.25).play();
+		if (loop) act.setLoop(LoopRepeat, Infinity);
+		currentAnim = name;
+		activeAction = act;
+	};
+
+	$effect(() => {
+		if (!$actions) return;
+		playAnim('GltfAnimation 0');
+	});
 
 	// ── Positional meow audio ──────────────────────────────────────────────────
 	const MEOW_URLS = [
@@ -37,15 +58,6 @@
 		clone.setVolume(settingsState.audio.sfxVolume * volume);
 		clone.play();
 	};
-
-	$effect(() => {
-		const act = $actions?.['GltfAnimation 0'];
-		if (act && !anim) {
-			act.setLoop(LoopRepeat, Infinity);
-			act.play();
-			anim = act;
-		}
-	});
 
 	// ── Reset on game restart ─────────────────────────────────────────────────
 	$effect(() => {
@@ -129,6 +141,11 @@
 	let escaping = false; // actively following escape direction
 	let escapeTimer = 0; // time remaining on escape maneuver
 	let investigateDir = 0; // direction to look during investigate
+	let sitting = false; // cat is sitting idle during patrol
+	let sitTimer = 0; // countdown while sitting
+	let nextSitCheck = 5; // seconds until next random sit decision
+	let attacking = false; // playing attack animation, blocks other anim switching
+	let attackTimer = 0; // time remaining on attack animation
 
 	function resetLocalState() {
 		facingAngle = 0;
@@ -146,6 +163,11 @@
 		escaping = false;
 		escapeTimer = 0;
 		investigateDir = 0;
+		sitting = false;
+		sitTimer = 0;
+		nextSitCheck = 5;
+		attacking = false;
+		attackTimer = 0;
 		catAIState.mode = 'patrol';
 		catAIState.alertLevel = 0;
 		catAIState.lastKnownPos = null;
@@ -166,7 +188,8 @@
 	onMount(resetLocalState);
 	onDestroy(() => {
 		catBody = null;
-		anim = null;
+		currentAnim = null;
+		activeAction = null;
 	});
 
 	// ── Reusable vectors (avoid per-frame alloc) ───────────────────────────────
@@ -267,6 +290,10 @@
 	const hitMouse = () => {
 		const damage = 5 + Math.floor(Math.random() * 11);
 		gameState.hunger = Math.max(0, gameState.hunger - damage);
+		playAnim('attack', false);
+		attacking = true;
+		attackTimer = CATCH_COOLDOWN;
+		soundActions.playImpact();
 		if (gameState.hunger <= 0) {
 			gameState.status = 'game_over';
 			soundActions.playKatzeWin();
@@ -571,6 +598,7 @@
 		// If mouse reached safe zone, cat gives up and wanders off
 		if (safe && (catAIState.mode === 'chase' || catAIState.mode === 'search')) {
 			catAIState.mode = 'patrol';
+			sitting = false;
 			catAIState.alertLevel = 0;
 			catAIState.lastKnownPos = null;
 			noSightTimer = 0;
@@ -583,18 +611,36 @@
 		switch (catAIState.mode) {
 			case 'patrol': {
 				if (sees) {
+					sitting = false;
 					catAIState.mode = 'chase';
 					catAIState.lastKnownPos = { x: _mousePos.x, y: _mousePos.y, z: _mousePos.z };
 					noSightTimer = 0;
 					playMeow(0.7 + catAIState.alertLevel * 0.3);
 					meowCooldown = 4 + Math.random() * 4;
 				} else if (hears) {
+					sitting = false;
 					catAIState.mode = 'search';
 					catAIState.lastKnownPos = { x: _mousePos.x, y: _mousePos.y, z: _mousePos.z };
 					searchTimer = SEARCH_TIMEOUT;
 					playMeow(0.3 + (gameState.sound / 100) * 0.4);
 					meowCooldown = 3 + Math.random() * 3;
 				}
+
+				// Sitting during patrol
+				if (sitting) {
+					sitTimer -= delta;
+					if (sitTimer <= 0) {
+						sitting = false;
+						nextSitCheck = 5 + Math.random() * 8;
+					}
+				} else {
+					nextSitCheck -= delta;
+					if (nextSitCheck <= 0) {
+						sitting = true;
+						sitTimer = 2 + Math.random() * 4;
+					}
+				}
+
 				catAIState.alertLevel = Math.max(0, catAIState.alertLevel - 0.3 * delta);
 				break;
 			}
@@ -699,6 +745,8 @@
 
 		switch (catAIState.mode) {
 			case 'patrol': {
+				if (sitting) break; // don't move while sitting
+
 				roamTimer -= delta;
 
 				const fwdX = -Math.sin(facingAngle);
@@ -841,6 +889,12 @@
 			desiredVZ = 0;
 		}
 
+		// Stop movement during attack animation
+		if (attacking) {
+			desiredVX = 0;
+			desiredVZ = 0;
+		}
+
 		const k = Math.min(1, delta * (grounded ? 14 : 4));
 		curVelX += (desiredVX - curVelX) * k;
 		curVelZ += (desiredVZ - curVelZ) * k;
@@ -851,8 +905,24 @@
 		const half = facingAngle / 2;
 		catBody.setRotation({ x: 0, y: Math.sin(half), z: 0, w: Math.cos(half) }, true);
 
-		// ── Animation speed ───────────────────────────────────────────────────
-		if (anim) anim.timeScale = catAIState.mode === 'chase' ? 1.5 : 1.0;
+		// ── Attack timer ───────────────────────────────────────────────────────
+		if (attacking) {
+			attackTimer -= delta;
+			if (attackTimer <= 0) attacking = false;
+		}
+
+		// ── Animation switching ───────────────────────────────────────────────────
+		if (attacking) {
+			playAnim('attack', false);
+		} else if (catAIState.mode === 'chase') {
+			playAnim('GltfAnimation 0');
+			if (activeAction) activeAction.setEffectiveTimeScale(1.5);
+		} else if (sitting) {
+			playAnim('sit');
+		} else {
+			playAnim('GltfAnimation 0');
+			if (activeAction) activeAction.setEffectiveTimeScale(1.0);
+		}
 
 		updateVisionCone(t, delta);
 	});
