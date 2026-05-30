@@ -201,7 +201,7 @@
 
 			if (justPressed && inRange && !decorationState.carrying) {
 				isDragging = true;
-				decorationActions.pickup();
+				decorationActions.pickup(index);
 				spawnSparks(pos.x, pos.y, pos.z);
 				soundActions.playMouseEating();
 			}

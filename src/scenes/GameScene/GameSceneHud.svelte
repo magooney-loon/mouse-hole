@@ -5,7 +5,11 @@
 	import { soundActions } from '$core/GlobalAudio.svelte';
 	import PlayerStats from '$lib/PlayerStats.svelte';
 	import { gameState, gameActions } from '$lib/gameState.svelte';
-	import { decorationState } from '$lib/decorationState.svelte';
+	import {
+		decorationState,
+		DECORATION_LABELS,
+		DECORATION_ICONS
+	} from '$lib/decorationState.svelte';
 
 	const countdown = $derived(Math.ceil(gameState.startTimer));
 
@@ -38,7 +42,9 @@
 			>
 				<span class="text-white/40 font-black uppercase tracking-widest text-xs">Survived</span>
 				<span class="text-white font-black text-2xl tabular-nums leading-none">
-					{String(Math.floor(gameState.elapsed / 60)).padStart(2, '0')}:{String(Math.floor(gameState.elapsed % 60)).padStart(2, '0')}
+					{String(Math.floor(gameState.elapsed / 60)).padStart(2, '0')}:{String(
+						Math.floor(gameState.elapsed % 60)
+					).padStart(2, '0')}
 				</span>
 			</div>
 		</div>
@@ -46,6 +52,8 @@
 
 	<!-- Carrying indicator — bottom center -->
 	{#if gameState.status === 'playing' && decorationState.carrying}
+		{@const itemLabel = DECORATION_LABELS[decorationState.carriedIndex] ?? 'Decoration'}
+		{@const itemIcon = DECORATION_ICONS[decorationState.carriedIndex] ?? '💎'}
 		<div
 			class="absolute bottom-28 left-1/2 -translate-x-1/2"
 			transition:fly={{ y: 8, duration: 180 }}
@@ -54,8 +62,10 @@
 				class="flex items-center gap-2 bg-purple-900/80 border-2 border-purple-400/70 rounded-full px-4 py-1.5 backdrop-blur-sm"
 				style="box-shadow: 0 0 16px #a855f740;"
 			>
-				<span class="text-base">💎</span>
-				<span class="text-purple-200 font-black text-xs uppercase tracking-widest">Carrying decoration</span>
+				<span class="text-base">{itemIcon}</span>
+				<span class="text-purple-200 font-black text-xs uppercase tracking-widest"
+					>Carrying {itemLabel}</span
+				>
 			</div>
 		</div>
 	{/if}
@@ -83,7 +93,10 @@
 					>
 						<span class="text-lg">💎</span>
 						<span class="text-white/80 font-bold text-sm">Press</span>
-						<kbd class="bg-purple-400 text-black border-2 border-black rounded px-1.5 py-0.5 font-black text-xs leading-none" style="box-shadow: 2px 2px 0 #000;">F</kbd>
+						<kbd
+							class="bg-purple-400 text-black border-2 border-black rounded px-1.5 py-0.5 font-black text-xs leading-none"
+							style="box-shadow: 2px 2px 0 #000;">F</kbd
+						>
 						<span class="text-white/80 font-bold text-sm">to drag decoration</span>
 					</div>
 				</div>
@@ -97,7 +110,10 @@
 					>
 						<span class="text-lg">🧀</span>
 						<span class="text-white/80 font-bold text-sm">Press</span>
-						<kbd class="bg-amber-400 text-black border-2 border-black rounded px-1.5 py-0.5 font-black text-xs leading-none" style="box-shadow: 2px 2px 0 #000;">F</kbd>
+						<kbd
+							class="bg-amber-400 text-black border-2 border-black rounded px-1.5 py-0.5 font-black text-xs leading-none"
+							style="box-shadow: 2px 2px 0 #000;">F</kbd
+						>
 						<span class="text-white/80 font-bold text-sm">to eat cheese</span>
 					</div>
 				</div>

@@ -1,7 +1,11 @@
 export const DECORATION_TOTAL = 5;
 
+export const DECORATION_LABELS = ['Fork', 'Matchstick', 'Lighter', 'Phone', 'Thimble'];
+export const DECORATION_ICONS = ['🍴', '🔥', '🔥', '📱', '🧵'];
+
 export const decorationState = $state({
 	carrying: false,
+	carriedIndex: -1,
 	deliveredCount: 0,
 	pickupInRange: false,
 	deliverInRange: false,
@@ -20,21 +24,25 @@ export const SNAP_OFFSETS: [number, number, number][] = [
 ];
 
 export const decorationActions = {
-	pickup() {
+	pickup(index: number) {
 		decorationState.carrying = true;
+		decorationState.carriedIndex = index;
 		decorationState.pickupInRange = false;
 	},
 	deliver(index: number) {
 		decorationState.carrying = false;
+		decorationState.carriedIndex = -1;
 		decorationState.delivered[index] = true;
 		decorationState.deliveredCount++;
 		decorationState.deliverInRange = false;
 	},
 	drop() {
 		decorationState.carrying = false;
+		decorationState.carriedIndex = -1;
 	},
 	reset() {
 		decorationState.carrying = false;
+		decorationState.carriedIndex = -1;
 		decorationState.deliveredCount = 0;
 		decorationState.pickupInRange = false;
 		decorationState.deliverInRange = false;

@@ -892,13 +892,13 @@
 		/>
 
 		<!-- Debug: collider visualization (remove when done) -->
-		<T.Mesh>
+		<!-- <T.Mesh>
 			<T.BoxGeometry args={[0.44, 0.6, 1.2]} />
 			<T.MeshBasicMaterial color={0xff0000} wireframe transparent opacity={0.5} />
-		</T.Mesh>
+		</T.Mesh> -->
 
 		{#if $gltf}
-			<T.Group scale={0.02} position={[0, -0.35, 0.35]} rotation={[0, Math.PI, 0]}>
+			<T.Group scale={0.02} position={[0, -0.3, 0.35]} rotation={[0, Math.PI, 0]}>
 				<T is={$gltf.scene} />
 			</T.Group>
 		{/if}
