@@ -35,6 +35,7 @@
 	let delivered = false;
 	let wasInRange = false;
 	let appearT = 0;
+	let bobT = 0;
 	let impactCooldown = 0;
 	let prevInteract = false;
 	let stuckTimer = 0;
@@ -42,6 +43,7 @@
 
 	let lightRef: THREE.PointLight | null = null;
 	let groupRef: THREE.Group | null = null;
+	let circleRef: THREE.Mesh | null = null;
 	let decorBody: any = null;
 
 	// ── Spark pool ────────────────────────────────────────────────────────────
@@ -144,6 +146,7 @@
 			isDragging = false;
 			delivered = false;
 			appearT = 0;
+			bobT = 0;
 			wasInRange = false;
 			impactCooldown = 0;
 			prevInteract = false;
@@ -202,12 +205,26 @@
 		groupRef.position.set(pos.x, pos.y, pos.z);
 		groupRef.rotation.y = decorBody.rotation().y; // follow physics tumble
 
+		// Floor circle follows XZ of body
+		if (circleRef) {
+			circleRef.position.x = pos.x;
+			circleRef.position.z = pos.z;
+			circleRef.visible = !delivered;
+		}
+
 		// Pop-in
 		if (appearT < 1) {
 			appearT = Math.min(1, appearT + delta / 0.4);
 			const t = appearT;
 			const s = t < 0.6 ? (t / 0.6) * 1.2 : 1.2 - ((t - 0.6) / 0.4) * 0.2;
 			groupRef.scale.setScalar(Math.max(0, s));
+		}
+
+		// Bob + spin while idle (not dragging, fully appeared)
+		if (!isDragging && appearT >= 1) {
+			bobT += delta;
+			groupRef.position.y = pos.y + 0.04 + Math.sin(bobT * 2.2) * 0.022;
+			groupRef.rotation.y = bobT * 0.75;
 		}
 
 		const interact = inputQueries.isPressed('player1', 'interact');
@@ -324,6 +341,25 @@
 		}
 	});
 </script>
+
+<!-- Floor indicator circle -->
+<T.Mesh
+	rotation={[-Math.PI / 2, 0, 0]}
+	oncreate={(ref) => {
+		circleRef = ref;
+		ref.position.set(position[0], 0.005, position[2]);
+	}}
+>
+	<T.CircleGeometry args={[0.09, 20]} />
+	<T.MeshStandardMaterial
+		color="#a855f7"
+		emissive="#a855f7"
+		emissiveIntensity={0.4}
+		transparent
+		opacity={0.35}
+		depthWrite={false}
+	/>
+</T.Mesh>
 
 <!-- Physics body -->
 <RigidBody

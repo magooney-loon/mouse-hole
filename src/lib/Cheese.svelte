@@ -28,6 +28,7 @@
 	let eatT = -1; // -1 = idle, 0 → 1 = shrink-out
 
 	let groupRef: THREE.Group | null = null;
+	let circleRef: THREE.Mesh | null = null;
 	let crumbGroupRef: THREE.Group | null = null;
 
 	// ── Crumb particle pool ───────────────────────────────────────────────────
@@ -172,6 +173,8 @@
 			c.mesh.scale.setScalar(Math.max(0, 1 - t * t));
 		}
 
+		if (circleRef) circleRef.visible = !eaten;
+
 		if (gameState.status !== 'playing') {
 			if (wasInRange) {
 				gameState.cheeseInRange = false;
@@ -255,6 +258,23 @@
 
 <!-- Outer group: stable world XZ from prop, never changes -->
 <T.Group position={[position[0], 0, position[2]]}>
+	<!-- Floor indicator circle — outside inner group so it ignores bob/scale -->
+	<T.Mesh
+		rotation={[-Math.PI / 2, 0, 0]}
+		position={[0, 0.005, 0]}
+		oncreate={(ref) => { circleRef = ref; }}
+	>
+		<T.CircleGeometry args={[0.1, 20]} />
+		<T.MeshStandardMaterial
+			color="#f5c218"
+			emissive="#f5c218"
+			emissiveIntensity={0.4}
+			transparent
+			opacity={0.35}
+			depthWrite={false}
+		/>
+	</T.Mesh>
+
 	<!-- Inner group: Y bob, rotation, scale — all driven imperatively -->
 	<T.Group
 		oncreate={(ref) => {
