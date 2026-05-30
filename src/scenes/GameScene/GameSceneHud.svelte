@@ -5,6 +5,7 @@
 	import { soundActions } from '$core/GlobalAudio.svelte';
 	import PlayerStats from '$lib/PlayerStats.svelte';
 	import TouchControls from '$lib/TouchControls.svelte';
+	import SpeedEffect from '$lib/SpeedEffect.svelte';
 	import { gameState, gameActions } from '$lib/gameState.svelte';
 	import {
 		decorationState,
@@ -54,7 +55,9 @@
 					class="bg-black/60 border border-white/20 rounded-xl px-3 py-1.5 backdrop-blur-sm flex flex-col items-center justify-center gap-0"
 					style="box-shadow: 2px 2px 0 #000;"
 				>
-					<span class="text-white/40 font-black uppercase tracking-widest" style="font-size:9px;">Time</span>
+					<span class="text-white/40 font-black uppercase tracking-widest" style="font-size:9px;"
+						>Time</span
+					>
 					<span class="text-white font-black text-xl tabular-nums leading-none">
 						{String(Math.floor(gameState.elapsed / 60)).padStart(2, '0')}:{String(
 							Math.floor(gameState.elapsed % 60)
@@ -67,10 +70,15 @@
 					class="bg-black/60 border border-purple-400/40 rounded-xl px-3 py-1.5 backdrop-blur-sm flex flex-col items-center justify-center gap-0.5"
 					style="box-shadow: 2px 2px 0 #000;"
 				>
-					<span class="text-purple-300/60 font-black uppercase tracking-widest" style="font-size:9px;">Items</span>
+					<span
+						class="text-purple-300/60 font-black uppercase tracking-widest"
+						style="font-size:9px;">Items</span
+					>
 					<div class="flex items-center gap-0.5">
 						{#each { length: DECORATION_TOTAL } as _, i}
-							<span class="text-sm">{decorationState.delivered[i] ? DECORATION_ICONS[i] : '⚪'}</span>
+							<span class="text-sm"
+								>{decorationState.delivered[i] ? DECORATION_ICONS[i] : '⚪'}</span
+							>
 						{/each}
 					</div>
 				</div>
@@ -231,7 +239,9 @@
 			>
 				<div class="flex items-center gap-6">
 					<div class="flex flex-col items-center gap-0.5">
-						<span class="text-white/40 font-black uppercase tracking-widest text-xs">Total Time</span>
+						<span class="text-white/40 font-black uppercase tracking-widest text-xs"
+							>Total Time</span
+						>
 						<span class="text-white font-black text-2xl tabular-nums leading-none">
 							{String(Math.floor(gameState.elapsed / 60)).padStart(2, '0')}:{String(
 								Math.floor(gameState.elapsed % 60)
@@ -353,5 +363,10 @@
 				</button>
 			</div>
 		</div>
+	{/if}
+
+	<!-- Speed effect overlay -->
+	{#if gameState.status === 'playing'}
+		<SpeedEffect />
 	{/if}
 </div>

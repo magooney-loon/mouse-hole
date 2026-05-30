@@ -65,6 +65,7 @@
 			curVelZ = 0;
 			camInitialized = false;
 			airTime = 0;
+			currentFov = BASE_FOV;
 			currentAnim = null;
 			activeAction = null;
 		}
@@ -82,6 +83,11 @@
 	let lastHitRequestId = 0;
 	let posLogTimer = 0;
 	let airTime = 0;
+
+	const BASE_FOV = 60;
+	const SPRINT_FOV = 72;
+	const FOV_LERP_SPEED = 6;
+	let currentFov = BASE_FOV;
 
 	const CAM_DISTANCE = 0.69;
 	const CAM_HEIGHT = 0.2;
@@ -273,11 +279,23 @@
 			gameCam.lookAt(_lookAt);
 		}
 
-		const sprinting =
+		const isSprintHeld =
 			inputQueries.isPressed('player1', 'sprint') && grounded && gameState.stamina > 0;
+		const sprinting = isSprintHeld && Math.abs(move.y) > 0.1;
 		const strafing = Math.abs(strafe) > 0.1;
 		const moving = Math.abs(move.y) > 0.1 || strafing;
-		tickGameState(delta, sprinting, moving, !grounded);
+
+		gameState.isSprinting = sprinting;
+
+		// FOV pump when sprinting
+		const targetFov = sprinting ? SPRINT_FOV : BASE_FOV;
+		currentFov += (targetFov - currentFov) * Math.min(1, delta * FOV_LERP_SPEED);
+		if (gameCam) {
+			gameCam.fov = currentFov;
+			gameCam.updateProjectionMatrix();
+		}
+
+		tickGameState(delta, isSprintHeld, moving, !grounded);
 
 		soundActions.setWalkState(
 			!grounded || !moving ? 'stopped' : sprinting ? 'sprinting' : 'walking'

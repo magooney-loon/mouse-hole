@@ -10,7 +10,8 @@ export const gameState = $state({
 	sound: 0,
 	cheeseInRange: false,
 	elapsed: 0,
-	inSafeZone: false
+	inSafeZone: false,
+	isSprinting: false
 });
 
 export const gameActions = {
