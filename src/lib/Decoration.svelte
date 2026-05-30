@@ -24,10 +24,9 @@
 	const DRAG_SPEED = 7; // max push velocity m/s
 	const DRAG_MAX_DIST = 1.2; // auto-drop if decoration this far from mouse
 	const PUSH_DIST = 0.55; // how far in front of mouse to target
-	const IMPACT_THRESHOLD = 30; // contact force threshold to play sound
-	const IMPACT_COOLDOWN = 0.35; // seconds between impact sounds
+
 	const SPAWN_Y_OFFSET = 0.2; // extra clearance above surface to prevent clipping
-	const WALL_CHECK_DIST = 0.16; // ray length for tunnel guard (ball radius 0.1 + 0.06 margin)
+
 	const STUCK_SPEED = 0.5; // m/s — below this while dist > STUCK_DIST = stuck
 	const STUCK_DIST = 0.25; // m from target while checking stuck
 	const STUCK_TIME = 0.3; // seconds before auto-drop at mouse feet
@@ -37,7 +36,6 @@
 	let wasInRange = false;
 	let appearT = 0;
 	let bobT = 0;
-	let impactCooldown = 0;
 	let prevInteract = false;
 	let stuckTimer = 0;
 	let pickupCooldown = 0;
@@ -120,15 +118,6 @@
 		decorBody.setLinvel({ x: 0, y: 0, z: 0 }, true);
 	};
 
-	const handleContact = (e: { totalForceMagnitude: number }) => {
-		if (!isDragging) return;
-		if (impactCooldown > 0) return;
-		if (e.totalForceMagnitude > IMPACT_THRESHOLD) {
-			soundActions.playImpact();
-			impactCooldown = IMPACT_COOLDOWN;
-		}
-	};
-
 	const dropAtMouse = () => {
 		isDragging = false;
 		stuckTimer = 0;
@@ -152,7 +141,6 @@
 			appearT = 0;
 			bobT = 0;
 			wasInRange = false;
-			impactCooldown = 0;
 			prevInteract = false;
 			stuckTimer = 0;
 			pickupCooldown = 0;
@@ -185,8 +173,6 @@
 			s.mesh.rotation.y += 8 * delta;
 			s.mesh.scale.setScalar(Math.max(0, 1 - t * t));
 		}
-
-		if (impactCooldown > 0) impactCooldown -= delta;
 
 		if (!groupRef || !decorBody || gameState.status !== 'playing') {
 			if (wasInRange) {
@@ -283,15 +269,14 @@
 				const nx = dx * inv;
 				const nz = dz * inv;
 
-				// Anti-tunnel: cast a short ray in the push direction.
-				// If a wall is within WALL_CHECK_DIST, zero velocity instead of pushing through.
+				// Anti-tunnel: raycast from ball toward target to detect walls.
 				const wallRay = new rapier.Ray(
 					{ x: pos.x, y: pos.y + 0.05, z: pos.z },
 					{ x: nx, y: 0, z: nz }
 				);
 				const wallHit = world.castRay(
 					wallRay,
-					WALL_CHECK_DIST,
+					dist,
 					false,
 					undefined,
 					undefined,
@@ -299,11 +284,23 @@
 					decorBody
 				);
 
+				console.log(
+					`[deco drag] pos=(${pos.x.toFixed(2)},${pos.y.toFixed(2)},${pos.z.toFixed(2)}) target=(${tx.toFixed(2)},${tz.toFixed(2)}) dist=${dist.toFixed(3)} wallHit=${wallHit ? `t=${wallHit.timeOfImpact.toFixed(3)}` : 'none'} vel=(${vel.x.toFixed(2)},${vel.z.toFixed(2)})`
+				);
+
 				if (!wallHit) {
 					const speed = Math.min(dist * 13, DRAG_SPEED);
 					decorBody.setLinvel({ x: nx * speed, y: vel.y, z: nz * speed }, true);
 				} else {
-					decorBody.setLinvel({ x: 0, y: vel.y, z: 0 }, true);
+					// Wall between ball and target — only push up to the wall hit point
+					const safeDist = Math.max(0, wallHit.timeOfImpact - 0.12);
+					console.log(`[deco drag] WALL HIT safeDist=${safeDist.toFixed(3)}`);
+					if (safeDist > 0.04) {
+						const safeSpeed = Math.min(safeDist * 10, DRAG_SPEED);
+						decorBody.setLinvel({ x: nx * safeSpeed, y: vel.y, z: nz * safeSpeed }, true);
+					} else {
+						decorBody.setLinvel({ x: 0, y: vel.y, z: 0 }, true);
+					}
 				}
 			} else {
 				decorBody.setLinvel({ x: 0, y: vel.y, z: 0 }, true);
@@ -313,7 +310,11 @@
 			const currentSpeed = Math.sqrt(vel.x * vel.x + vel.z * vel.z);
 			if (dist > STUCK_DIST && currentSpeed < STUCK_SPEED && pickupCooldown <= 0) {
 				stuckTimer += delta;
+				console.log(
+					`[deco drag] STUCK? timer=${stuckTimer.toFixed(2)} speed=${currentSpeed.toFixed(2)} dist=${dist.toFixed(3)}`
+				);
 				if (stuckTimer > STUCK_TIME) {
+					console.log(`[deco drag] DROPPING AT MOUSE - was stuck`);
 					dropAtMouse();
 					return;
 				}
@@ -322,9 +323,17 @@
 			}
 
 			// Distance safety net — item somehow far away → also drop at mouse feet
+			// Floor safety net — ball fell below level → rescue at mouse feet
+			if (pos.y < -0.5) {
+				console.log(`[deco drag] DROPPING AT MOUSE - fell below level (y=${pos.y.toFixed(2)})`);
+				dropAtMouse();
+				return;
+			}
+
 			const dragDx = mouseSharedPos.x - pos.x;
 			const dragDz = mouseSharedPos.z - pos.z;
 			if (Math.sqrt(dragDx * dragDx + dragDz * dragDz) > DRAG_MAX_DIST) {
+				console.log(`[deco drag] DROPPING AT MOUSE - too far from mouse`);
 				dropAtMouse();
 				return;
 			}
@@ -386,12 +395,7 @@
 		rb.setTranslation({ x: position[0], y: position[1] + SPAWN_Y_OFFSET, z: position[2] }, true);
 	}}
 >
-	<Collider
-		shape="ball"
-		args={[0.1]}
-		contactForceEventThreshold={IMPACT_THRESHOLD}
-		oncontact={handleContact}
-	/>
+	<Collider shape="ball" args={[0.1]} />
 </RigidBody>
 
 <!-- Visual — position synced to body each frame -->

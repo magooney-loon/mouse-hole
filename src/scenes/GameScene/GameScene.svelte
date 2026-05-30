@@ -1,6 +1,6 @@
 <script lang="ts">
 	import Mouse from '$lib/Mouse.svelte';
-	import CatAI from '$lib/CatAI.svelte';
+	/* 	import CatAI from '$lib/CatAI.svelte'; */
 	// import { Debug } from '@threlte/rapier';
 	import Cheese from '$lib/Cheese.svelte';
 	import Decoration from '$lib/Decoration.svelte';
@@ -66,7 +66,7 @@
 
 <!-- <Debug /> -->
 <Mouse />
-<CatAI />
+<!-- <CatAI /> -->
 <SpawnPoint position={SPAWN_POSITION} />
 
 {#each cheesePos as pos}

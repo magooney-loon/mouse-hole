@@ -205,7 +205,7 @@
 		posLogTimer -= delta;
 		if (posLogTimer <= 0) {
 			posLogTimer = 2;
-			console.log(`[mouse pos] x: ${t.x.toFixed(3)}, y: ${t.y.toFixed(3)}, z: ${t.z.toFixed(3)}`);
+			/* 	console.log(`[mouse pos] x: ${t.x.toFixed(3)}, y: ${t.y.toFixed(3)}, z: ${t.z.toFixed(3)}`); */
 		}
 
 		if (gameState.status === 'starting') {
