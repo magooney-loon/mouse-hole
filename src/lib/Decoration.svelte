@@ -20,6 +20,7 @@
 	const PICKUP_RADIUS = 1.1; // start dragging when mouse this close
 	const CAPTURE_RADIUS = 0.45; // auto-deliver when body this close to spawn
 	const DRAG_SPEED = 7; // max push velocity m/s
+	const DRAG_MAX_DIST = 2.0; // auto-drop if decoration this far from mouse
 	const PUSH_DIST = 0.55; // how far in front of mouse to target
 	const IMPACT_THRESHOLD = 30; // contact force threshold to play sound
 	const IMPACT_COOLDOWN = 0.35; // seconds between impact sounds
@@ -231,6 +232,18 @@
 				decorBody.setLinvel({ x: dx * inv * speed, y: vel.y, z: dz * inv * speed }, true);
 			} else {
 				decorBody.setLinvel({ x: 0, y: vel.y, z: 0 }, true);
+			}
+
+			// Auto-drop if decoration got stuck and is too far away
+			const dragDx = mouseSharedPos.x - pos.x;
+			const dragDz = mouseSharedPos.z - pos.z;
+			const dragDist = Math.sqrt(dragDx * dragDx + dragDz * dragDz);
+			if (dragDist > DRAG_MAX_DIST) {
+				isDragging = false;
+				decorationActions.drop();
+				if (lightRef) lightRef.intensity = 0.9;
+				if (decorationState.deliverInRange) decorationState.deliverInRange = false;
+				return;
 			}
 
 			// Glow pulse while dragging
