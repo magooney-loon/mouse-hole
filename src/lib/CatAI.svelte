@@ -4,7 +4,7 @@
 	import { RigidBody, Collider, useRapier } from '@threlte/rapier';
 	import { useGltf, useGltfAnimations } from '@threlte/extras';
 	import { BASE_URL } from '$extensions/settings/settings.svelte';
-	import { catAIState, mouseSharedPos } from '$lib/catAI.svelte';
+	import { catAIState, mouseHitRequest, mouseSharedPos } from '$lib/catAI.svelte';
 	import { gameState } from '$lib/gameState.svelte';
 	import { soundActions } from '$core/globalAudio.svelte';
 	import * as THREE from 'three';
@@ -39,9 +39,9 @@
 	});
 
 	// ── Constants ─────────────────────────────────────────────────────────────
-	const CAT_WALK_SPEED    = 2.5;
-	const CAT_SEARCH_SPEED  = 3.2;
-	const CAT_CHASE_SPEED   = 5.5;
+	const CAT_WALK_SPEED    = 1.8;
+	const CAT_SEARCH_SPEED  = 2.4;
+	const CAT_CHASE_SPEED   = 3.8;
 	const CAT_JUMP_VEL      = 4.5;
 	const GROUND_RAY_LEN    = 0.28;
 
@@ -49,10 +49,14 @@
 	const CAT_SIGHT_HALF_ANGLE = Math.PI / 4; // 90° total FOV
 	const CAT_HEAR_BASE        = 2;
 	const CAT_HEAR_MAX         = 10;
-	const CONE_RADIUS          = Math.tan(CAT_SIGHT_HALF_ANGLE) * CAT_SIGHT_RANGE;
+	const CONE_SEGMENTS        = 24;
+	const CONE_EYE_HEIGHT      = 0.3;
 
 	const ARRIVE_DIST        = 1.0;
-	const CATCH_DIST         = 0.55;
+	const CATCH_DIST         = 0.78;
+	const CATCH_COOLDOWN     = 0.9;
+	const KNOCKBACK_SPEED    = 5.5;
+	const KNOCKBACK_UP       = 2.7;
 	const INVESTIGATE_DUR    = 3.5;
 	const SEARCH_TIMEOUT     = 10;
 	const SIGHT_LOSS_TIMEOUT = 1.5;
@@ -74,6 +78,7 @@
 	let noSightTimer = 0;
 	let searchTimer  = 0;
 	let meowCooldown = 3;
+	let catchCooldown = 0;
 	let prevMode     = catAIState.mode;
 
 	function resetLocalState() {
@@ -86,6 +91,7 @@
 		noSightTimer = 0;
 		searchTimer  = 0;
 		meowCooldown = 3;
+		catchCooldown = 0;
 		prevMode     = 'patrol';
 		catAIState.mode          = 'patrol';
 		catAIState.alertLevel    = 0;
@@ -102,10 +108,14 @@
 	const _toMouse     = new THREE.Vector3();
 	const _fwdFlat     = new THREE.Vector3();
 	const _toMouseFlat = new THREE.Vector3();
+	const _hitDir      = new THREE.Vector3();
+	const _rayDir      = new THREE.Vector3();
+	const _conePositions = new Float32Array((CONE_SEGMENTS + 2) * 3);
 
-	// ── DEV: vision cone refs (updated imperatively in the task) ──────────────
+	// ── Vision cone refs (updated imperatively in the task) ──────────────────
 	let coneGroupRef: THREE.Group | null = null;
 	let coneMatRef:   THREE.MeshBasicMaterial | null = null;
+	let coneGeoRef:   THREE.BufferGeometry<THREE.NormalBufferAttributes> | null = null;
 
 	// ── Perception ────────────────────────────────────────────────────────────
 	const isGrounded = (): boolean => {
@@ -117,15 +127,21 @@
 	// Returns true if there is no wall between cat eye and mouse.
 	// Excludes the cat's own body; a hit at distance >= dist - 0.3 means the
 	// mouse's own collider was the only thing struck (LOS is clear).
+	const firstRayHitDist = (
+		origin: { x: number; y: number; z: number },
+		dir: { x: number; y: number; z: number },
+		maxDist: number
+	): number => {
+		const ray = new rapier.Ray(origin, dir);
+		const hit = world.castRay(ray, maxDist, true, undefined, undefined, undefined, catBody);
+		return hit ? hit.timeOfImpact : maxDist;
+	};
+
 	const hasLOS = (dist: number): boolean => {
-		const dir = _toMouse.clone().normalize();
+		const dir = _toMouse.normalize();
 		const t   = catBody.translation();
-		const ray = new rapier.Ray(
-			{ x: t.x, y: t.y + 0.3, z: t.z },
-			{ x: dir.x, y: dir.y, z: dir.z }
-		);
-		const hit = world.castRay(ray, dist, true, undefined, undefined, undefined, catBody);
-		return !hit || hit.timeOfImpact >= dist - 0.3;
+		const wallDist = firstRayHitDist({ x: t.x, y: t.y + CONE_EYE_HEIGHT, z: t.z }, dir, dist);
+		return wallDist >= dist - 0.12;
 	};
 
 	const canSee = (): boolean => {
@@ -138,6 +154,70 @@
 		if (_fwdFlat.dot(_toMouseFlat) <= Math.cos(CAT_SIGHT_HALF_ANGLE)) return false;
 
 		return hasLOS(dist);
+	};
+
+	const hitMouse = () => {
+		const damage = 5 + Math.floor(Math.random() * 11);
+		gameState.hunger = Math.max(0, gameState.hunger - damage);
+		if (gameState.hunger <= 0) {
+			gameState.status = 'game_over';
+			soundActions.playKatzeWin();
+		}
+
+		_hitDir.subVectors(_mousePos, _catPos);
+		_hitDir.y = 0;
+		if (_hitDir.lengthSq() < 0.0001) {
+			_hitDir.set(-Math.sin(facingAngle), 0, -Math.cos(facingAngle));
+		} else {
+			_hitDir.normalize();
+		}
+
+		mouseHitRequest.id += 1;
+		mouseHitRequest.x = _hitDir.x * KNOCKBACK_SPEED;
+		mouseHitRequest.y = KNOCKBACK_UP;
+		mouseHitRequest.z = _hitDir.z * KNOCKBACK_SPEED;
+	};
+
+	const updateVisionCone = (t: { x: number; y: number; z: number }) => {
+		if (!coneGroupRef || !coneGeoRef) return;
+
+		coneGroupRef.position.set(t.x, t.y + CONE_EYE_HEIGHT, t.z);
+		coneGroupRef.rotation.y = facingAngle;
+
+		_conePositions[0] = 0;
+		_conePositions[1] = 0;
+		_conePositions[2] = 0;
+
+		for (let i = 0; i <= CONE_SEGMENTS; i += 1) {
+			const a = -CAT_SIGHT_HALF_ANGLE + (i / CONE_SEGMENTS) * CAT_SIGHT_HALF_ANGLE * 2;
+			const localX = -Math.sin(a);
+			const localZ = -Math.cos(a);
+			const worldAngle = facingAngle + a;
+			_rayDir.set(-Math.sin(worldAngle), 0, -Math.cos(worldAngle));
+			const rayDist = firstRayHitDist(
+				{ x: t.x, y: t.y + CONE_EYE_HEIGHT, z: t.z },
+				{ x: _rayDir.x, y: _rayDir.y, z: _rayDir.z },
+				CAT_SIGHT_RANGE
+			);
+			const dist = Math.max(0.05, rayDist - 0.04);
+			const offset = (i + 1) * 3;
+			_conePositions[offset] = localX * dist;
+			_conePositions[offset + 1] = 0;
+			_conePositions[offset + 2] = localZ * dist;
+		}
+
+		const attr = coneGeoRef.getAttribute('position') as THREE.BufferAttribute;
+		attr.needsUpdate = true;
+		coneGeoRef.computeBoundingSphere();
+
+		if (catAIState.mode !== prevMode) {
+			prevMode = catAIState.mode;
+			coneMatRef?.color.setHex(
+				catAIState.mode === 'chase'       ? 0xff3333 :
+				catAIState.mode === 'search'      ? 0xffaa00 :
+				catAIState.mode === 'investigate' ? 0xffff00 : 0x44ff44
+			);
+		}
 	};
 
 	const canHear = (): boolean => {
@@ -165,6 +245,7 @@
 		const grounded = isGrounded();
 
 		meowCooldown = Math.max(0, meowCooldown - delta);
+		catchCooldown = Math.max(0, catchCooldown - delta);
 		const sees = canSee();
 		const hears = canHear();
 
@@ -214,9 +295,14 @@
 				break;
 			}
 			case 'chase': {
-				if (_catPos.distanceTo(_mousePos) < CATCH_DIST && gameState.status === 'playing') {
-					gameState.status = 'game_over';
-					soundActions.playKatzeWin();
+				if (
+					catchCooldown <= 0 &&
+					gameState.status === 'playing' &&
+					_catPos.distanceTo(_mousePos) < CATCH_DIST &&
+					hasLOS(CATCH_DIST)
+				) {
+					catchCooldown = CATCH_COOLDOWN;
+					hitMouse();
 				}
 				if (sees) {
 					catAIState.lastKnownPos = { x: _mousePos.x, y: _mousePos.y, z: _mousePos.z };
@@ -340,21 +426,10 @@
 		// ── Animation speed ───────────────────────────────────────────────────
 		if (anim) anim.timeScale = catAIState.mode === 'chase' ? 1.5 : 1.0;
 
-		// ── DEV: update vision cone ───────────────────────────────────────────
-		if (import.meta.env.DEV && coneGroupRef) {
-			coneGroupRef.position.set(t.x, t.y + 0.3, t.z);
-			coneGroupRef.rotation.y = facingAngle;
-
-			if (catAIState.mode !== prevMode) {
-				prevMode = catAIState.mode;
-				coneMatRef?.color.setHex(
-					catAIState.mode === 'chase'       ? 0xff3333 :
-					catAIState.mode === 'search'      ? 0xffaa00 :
-					catAIState.mode === 'investigate' ? 0xffff00 : 0x44ff44
-				);
-			}
-		}
+		updateVisionCone(t);
 	});
+
+	const coneIndices = Array.from({ length: CONE_SEGMENTS }, (_, i) => [0, i + 1, i + 2]).flat();
 </script>
 
 <T.Group position={[8.127, 1, 1.407]}>
@@ -364,28 +439,32 @@
 		canSleep={false}
 		oncreate={(rb) => { catBody = rb; }}
 	>
-		<Collider shape="cuboid" args={[0.15, 0.2, 0.2]} />
+		<Collider shape="cuboid" args={[0.22, 0.24, 0.28]} />
 
 		{#if $gltf}
-			<T.Group scale={0.02}>
+			<T.Group scale={0.02} rotation={[0, Math.PI, 0]}>
 				<T is={$gltf.scene} />
 			</T.Group>
 		{/if}
 	</RigidBody>
 </T.Group>
 
-<!-- DEV: vision cone — tip at cat eye, opens in facing direction -->
-{#if import.meta.env.DEV}
-	<T.Group oncreate={(ref) => { coneGroupRef = ref; }}>
-		<T.Mesh position={[0, 0, -(CAT_SIGHT_RANGE / 2)]} rotation={[Math.PI / 2, 0, 0]}>
-			<T.ConeGeometry args={[CONE_RADIUS, CAT_SIGHT_RANGE, 24, 1, true]} />
-			<T.MeshBasicMaterial
-				color={0x44ff44}
-				transparent
-				opacity={0.12}
-				side={THREE.DoubleSide}
-				oncreate={(ref) => { coneMatRef = ref; }}
-			/>
-		</T.Mesh>
-	</T.Group>
-{/if}
+<T.Group oncreate={(ref) => { coneGroupRef = ref; }}>
+	<T.Mesh>
+		<T.BufferGeometry
+			oncreate={(ref) => {
+				coneGeoRef = ref as THREE.BufferGeometry<THREE.NormalBufferAttributes>;
+				ref.setAttribute('position', new THREE.BufferAttribute(_conePositions, 3));
+				ref.setIndex(coneIndices);
+			}}
+		/>
+		<T.MeshBasicMaterial
+			color={0x44ff44}
+			transparent
+			opacity={0.18}
+			depthWrite={false}
+			side={THREE.DoubleSide}
+			oncreate={(ref) => { coneMatRef = ref; }}
+		/>
+	</T.Mesh>
+</T.Group>

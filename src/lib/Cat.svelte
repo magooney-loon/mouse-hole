@@ -66,7 +66,7 @@
 			const dx = to.x - from.x;
 			const dz = to.z - from.z;
 			if (Math.abs(dx) > 0.001 || Math.abs(dz) > 0.001) {
-				targetRotY = Math.atan2(dx, dz);
+				targetRotY = Math.atan2(-dx, -dz);
 			}
 			// Shortest-path lerp to avoid spinning the long way around
 			let diff = targetRotY - currentRotY;
@@ -85,6 +85,8 @@
 			catGroup = ref;
 		}}
 	>
-		<T is={$gltf.scene} />
+		<T.Group rotation={[0, Math.PI, 0]}>
+			<T is={$gltf.scene} />
+		</T.Group>
 	</T.Group>
 {/if}

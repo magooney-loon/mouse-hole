@@ -4,7 +4,7 @@
 	import { RigidBody, Collider, useRapier } from '@threlte/rapier';
 	import { inputQueries, advanceInputFrame } from '$extensions/input/input.svelte';
 	import { tickGameState, gameState } from '$lib/gameState.svelte';
-	import { mouseSharedPos } from '$lib/catAI.svelte';
+	import { mouseHitRequest, mouseSharedPos } from '$lib/catAI.svelte';
 	import { soundActions } from '$core/globalAudio.svelte';
 	import * as THREE from 'three';
 
@@ -42,6 +42,7 @@
 	let takeoffSpeed = WALK_SPEED;
 	let curVelX = 0;
 	let curVelZ = 0;
+	let lastHitRequestId = 0;
 
 	const CAM_DISTANCE = 0.69;
 	const CAM_HEIGHT = 0.2;
@@ -105,6 +106,13 @@
 		if (inputQueries.wasPressed('player1', 'jump') && grounded) {
 			velY = JUMP_VELOCITY;
 			soundActions.playMouseJump();
+		}
+
+		if (mouseHitRequest.id !== lastHitRequestId) {
+			lastHitRequestId = mouseHitRequest.id;
+			curVelX = mouseHitRequest.x;
+			curVelZ = mouseHitRequest.z;
+			velY = Math.max(velY, mouseHitRequest.y);
 		}
 
 		mouseBody.setLinvel({ x: curVelX, y: velY, z: curVelZ }, true);
