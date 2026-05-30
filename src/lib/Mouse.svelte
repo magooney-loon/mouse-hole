@@ -3,7 +3,7 @@
 	import { T, useTask } from '@threlte/core';
 	import { RigidBody, Collider, useRapier } from '@threlte/rapier';
 	import { inputQueries, advanceInputFrame } from '$extensions/input/input.svelte';
-	import { tickGameState } from '$lib/gameState.svelte';
+	import { tickGameState, gameState } from '$lib/gameState.svelte';
 	import * as THREE from 'three';
 
 	const { world, rapier } = useRapier();
@@ -59,7 +59,8 @@
 	useTask((delta) => {
 		if (!mouseBody || !gameCam) return;
 
-		const move = inputQueries.getMoveVector('player1');
+		const locked = gameState.status === 'starting' || gameState.status === 'idle';
+		const move = locked ? { x: 0, y: 0 } : inputQueries.getMoveVector('player1');
 		const grounded = isGrounded();
 
 		let speed: number;

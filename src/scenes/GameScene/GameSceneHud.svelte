@@ -1,9 +1,11 @@
 <script lang="ts">
-	import { fly } from 'svelte/transition';
+	import { fly, fade } from 'svelte/transition';
 	import { sceneActions } from '$extensions/scene/scene.svelte';
 	import { soundActions } from '$core/GlobalAudio.svelte';
 	import PlayerStats from '$lib/PlayerStats.svelte';
 	import { gameState, gameActions } from '$lib/gameState.svelte';
+
+	const countdown = $derived(Math.ceil(gameState.startTimer));
 </script>
 
 <div class="pointer-events-none absolute inset-0" transition:fly={{ y: 12, duration: 220 }}>
@@ -16,6 +18,62 @@
 			sound={Math.round(gameState.sound)}
 		/>
 	</div>
+
+	<!-- Intro tutorial overlay -->
+	{#if gameState.status === 'starting'}
+		<div
+			class="absolute inset-0 flex flex-col items-center justify-center gap-6"
+			transition:fade={{ duration: 400 }}
+		>
+			<!-- Countdown -->
+			<div
+				class="text-[8rem] font-black leading-none text-amber-300 select-none"
+				style="text-shadow: 6px 6px 0 #000, -2px -2px 0 #000;"
+			>
+				{countdown}
+			</div>
+
+			<!-- Tutorial card -->
+			<div
+				class="flex flex-col gap-4 bg-black/60 border-4 border-black rounded-2xl px-8 py-6 backdrop-blur-md max-w-md w-full mx-4"
+				style="box-shadow: 6px 6px 0 #000;"
+			>
+				<p class="m-0 text-center text-amber-300 font-black uppercase tracking-widest text-sm">
+					🐭 You are a mouse. The cat is coming.
+				</p>
+
+				<div class="grid grid-cols-2 gap-x-6 gap-y-2.5">
+					{#each [
+						['WASD', 'Move'],
+						['Shift', 'Sprint (loud!)'],
+						['Space', 'Jump'],
+						['E', 'Interact'],
+					] as [key, desc]}
+						<div class="flex items-center gap-2">
+							<kbd
+								class="bg-amber-400 text-black border-2 border-black rounded px-1.5 py-0.5
+								       font-black text-xs leading-none shrink-0"
+								style="box-shadow: 2px 2px 0 #000;"
+							>{key}</kbd>
+							<span class="text-xs text-white/60 font-bold">{desc}</span>
+						</div>
+					{/each}
+				</div>
+
+				<div class="border-t-2 border-white/10 pt-3 flex flex-col gap-1.5">
+					<p class="m-0 text-xs text-white/50 leading-relaxed">
+						🏡 <strong class="text-amber-300">Goal:</strong> find all decorations scattered around the house and bring them back to your cozy mouse hole. You can only carry <strong class="text-amber-300">one at a time</strong>.
+					</p>
+					<p class="m-0 text-xs text-white/50 leading-relaxed">
+						🍖 <strong class="text-amber-300">Hunger drains</strong> while you're outside. Forage for food to survive.
+					</p>
+					<p class="m-0 text-xs text-white/50 leading-relaxed">
+						🔊 <strong class="text-red-400">Sound attracts the cat.</strong> Walk silently, sprint only when you must.
+					</p>
+				</div>
+			</div>
+		</div>
+	{/if}
 
 	<!-- Back button — bottom center -->
 	<div class="pointer-events-auto absolute bottom-6 left-1/2 -translate-x-1/2">

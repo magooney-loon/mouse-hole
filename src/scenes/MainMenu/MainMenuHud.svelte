@@ -81,7 +81,14 @@
 			<!-- Buttons -->
 			<div class="flex flex-col gap-3">
 				<button
-					onclick={() => { soundActions.playClick(); gameActions.start(); sceneActions.goToGameScene(); }}
+					onclick={() => {
+						soundActions.playClick();
+						gameActions.start();
+						soundActions.playKatzeIntro();
+						setTimeout(() => soundActions.playRandomMeow(), 2000);
+						setTimeout(() => soundActions.playRandomMeow(), 5000);
+						sceneActions.goToGameScene();
+					}}
 					class="{btnBase} py-4 text-xl bg-amber-400 text-black"
 					style="box-shadow: 6px 6px 0 #000;"
 					onmousedown={(e) => (e.currentTarget.style.boxShadow = '2px 2px 0 #000')}
