@@ -56,8 +56,8 @@
 						soundActions.playClick();
 						gameActions.start();
 						soundActions.playKatzeIntro();
-						setTimeout(() => soundActions.playRandomMeow(0.4), 2000);
-						setTimeout(() => soundActions.playRandomMeow(), 5000);
+						setTimeout(() => soundActions.playRandomMeow(0.1), 2000);
+						setTimeout(() => soundActions.playRandomMeow(0.1), 5000);
 						sceneActions.goToGameScene();
 					}}
 					class="{btnBase} py-4 text-xl bg-amber-400 text-black"
