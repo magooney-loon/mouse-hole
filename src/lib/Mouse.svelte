@@ -21,6 +21,7 @@
 	const { actions } = useGltfAnimations(gltf);
 
 	let currentAnim: string | null = null;
+	let activeAction: any = null;
 
 	const playAnim = (name: string) => {
 		if (name === currentAnim) return;
@@ -32,6 +33,7 @@
 		}
 		act.reset().setLoop(LoopRepeat, Infinity).fadeIn(0.2).play();
 		currentAnim = name;
+		activeAction = act;
 	};
 
 	$effect(() => {
@@ -64,6 +66,7 @@
 			camInitialized = false;
 			airTime = 0;
 			currentAnim = null;
+			activeAction = null;
 		}
 	});
 
@@ -280,11 +283,22 @@
 			!grounded || !moving ? 'stopped' : sprinting ? 'sprinting' : 'walking'
 		);
 
-		// Animation switching
-		if (moving && grounded) {
+		// Animation switching — keep run while airborne, just slow it
+		if (moving || !grounded) {
 			playAnim('run');
 		} else {
 			playAnim('Idle');
+		}
+
+		// Animation speed
+		if (activeAction) {
+			if (!grounded) {
+				activeAction.setEffectiveTimeScale(0.3);
+			} else if (sprinting) {
+				activeAction.setEffectiveTimeScale(1.5);
+			} else {
+				activeAction.setEffectiveTimeScale(1.0);
+			}
 		}
 
 		advanceInputFrame();
