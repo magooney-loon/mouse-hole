@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { fly, fade } from 'svelte/transition';
+	import { untrack } from 'svelte';
 	import { sceneActions } from '$extensions/scene/scene.svelte';
 	import { soundActions } from '$core/GlobalAudio.svelte';
 	import PlayerStats from '$lib/PlayerStats.svelte';
@@ -9,8 +10,10 @@
 
 	$effect(() => {
 		if (gameState.status === 'game_over') {
-			soundActions.playMouseGameover();
-			soundActions.playKatzeWin();
+			untrack(() => {
+				soundActions.playMouseGameover();
+				soundActions.playKatzeWin();
+			});
 		}
 	});
 </script>

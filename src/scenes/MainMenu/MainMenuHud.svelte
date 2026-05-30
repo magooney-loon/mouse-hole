@@ -85,7 +85,7 @@
 						soundActions.playClick();
 						gameActions.start();
 						soundActions.playKatzeIntro();
-						setTimeout(() => soundActions.playRandomMeow(), 2000);
+						setTimeout(() => soundActions.playRandomMeow(0.4), 2000);
 						setTimeout(() => soundActions.playRandomMeow(), 5000);
 						sceneActions.goToGameScene();
 					}}

@@ -10,6 +10,7 @@ export const soundTriggers = $state({
 	walkState: 'stopped' as WalkState,
 	meowTrigger: 0,
 	meowWhich: 1, // 1–4
+	meowVolume: 1.0,
 });
 
 export const soundActions = {
@@ -20,8 +21,9 @@ export const soundActions = {
 	playMouseGameover() { soundTriggers.mouseGameover++; },
 	playMouseJump() { soundTriggers.mouseJump++; },
 	setWalkState(state: WalkState) { soundTriggers.walkState = state; },
-	playRandomMeow() {
+	playRandomMeow(volume = 1.0) {
 		soundTriggers.meowWhich = Math.floor(Math.random() * 4) + 1;
+		soundTriggers.meowVolume = volume;
 		soundTriggers.meowTrigger++;
 	},
 };

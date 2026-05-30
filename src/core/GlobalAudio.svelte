@@ -107,7 +107,9 @@
 		if (state === 'stopped' || !settingsState.audio.sfxEnabled) {
 			if (mouseWalkingAudio.isPlaying) mouseWalkingAudio.stop();
 		} else {
-			mouseWalkingAudio.setPlaybackRate(state === 'sprinting' ? 1.7 : 1.0);
+			const isSprinting = state === 'sprinting';
+			mouseWalkingAudio.setPlaybackRate(isSprinting ? 1.7 : 1.0);
+			mouseWalkingAudio.setVolume(settingsState.audio.sfxVolume * (isSprinting ? 0.9 : 0.35));
 			if (!mouseWalkingAudio.isPlaying) mouseWalkingAudio.play();
 		}
 	});
@@ -125,7 +127,12 @@
 	});
 	$effect(() => {
 		if (soundTriggers.meowTrigger > 0 && settingsState.audio.sfxEnabled) {
-			playPolyphonic(meowAudios[soundTriggers.meowWhich - 1]);
+			const audio = meowAudios[soundTriggers.meowWhich - 1];
+			if (audio?.buffer) {
+				const clone = audio.clone() as ThreeAudio;
+				clone.setVolume(settingsState.audio.sfxVolume * soundTriggers.meowVolume);
+				clone.play();
+			}
 			soundTriggers.meowTrigger = 0;
 		}
 	});
