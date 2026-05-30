@@ -82,7 +82,7 @@
 						style="box-shadow: 0 0 12px #a855f740;"
 					>
 						<span class="text-lg">💎</span>
-						<span class="text-white/80 font-bold text-sm">Hold</span>
+						<span class="text-white/80 font-bold text-sm">Press</span>
 						<kbd class="bg-purple-400 text-black border-2 border-black rounded px-1.5 py-0.5 font-black text-xs leading-none" style="box-shadow: 2px 2px 0 #000;">F</kbd>
 						<span class="text-white/80 font-bold text-sm">to drag decoration</span>
 					</div>

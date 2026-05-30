@@ -15,27 +15,36 @@
 	}
 	let { position, spawnPosition }: Props = $props();
 
-	const PICKUP_RADIUS      = 1.1;   // start dragging when mouse this close
-	const CAPTURE_RADIUS     = 0.45;  // auto-deliver when body this close to spawn
-	const DRAG_SPEED         = 7;     // max push velocity m/s
-	const PUSH_DIST          = 0.55;  // how far in front of mouse to target
-	const IMPACT_THRESHOLD   = 30;    // contact force threshold to play sound
-	const IMPACT_COOLDOWN    = 0.35;  // seconds between impact sounds
+	const PICKUP_RADIUS = 1.1; // start dragging when mouse this close
+	const CAPTURE_RADIUS = 0.45; // auto-deliver when body this close to spawn
+	const DRAG_SPEED = 7; // max push velocity m/s
+	const PUSH_DIST = 0.55; // how far in front of mouse to target
+	const IMPACT_THRESHOLD = 30; // contact force threshold to play sound
+	const IMPACT_COOLDOWN = 0.35; // seconds between impact sounds
 
-	let isDragging      = false;
-	let delivered       = false;
-	let wasInRange      = false;
-	let appearT         = 0;
-	let impactCooldown  = 0;
+	let isDragging = false;
+	let delivered = false;
+	let wasInRange = false;
+	let appearT = 0;
+	let impactCooldown = 0;
+	let prevInteract = false;
 
 	let emissiveRef: THREE.MeshStandardMaterial | null = null;
-	let groupRef:    THREE.Group | null = null;
-	let decorBody:   any = null;
+	let groupRef: THREE.Group | null = null;
+	let decorBody: any = null;
 
 	// ── Spark pool ────────────────────────────────────────────────────────────
 	const SPARK_COUNT = 10;
-	const _sparkGeo   = new THREE.OctahedronGeometry(0.018, 0);
-	type Spark = { mesh: THREE.Mesh; vx: number; vy: number; vz: number; life: number; maxLife: number; active: boolean };
+	const _sparkGeo = new THREE.OctahedronGeometry(0.018, 0);
+	type Spark = {
+		mesh: THREE.Mesh;
+		vx: number;
+		vy: number;
+		vz: number;
+		life: number;
+		maxLife: number;
+		active: boolean;
+	};
 	const sparks: Spark[] = [];
 	let sparkGroupRef: THREE.Group | null = null;
 
@@ -43,7 +52,9 @@
 		for (let i = 0; i < SPARK_COUNT; i++) {
 			const mat = new THREE.MeshStandardMaterial({
 				color: i % 2 === 0 ? '#c084fc' : '#e879f9',
-				emissive: '#a855f7', emissiveIntensity: 0.8, flatShading: true,
+				emissive: '#a855f7',
+				emissiveIntensity: 0.8,
+				flatShading: true
 			});
 			const mesh = new THREE.Mesh(_sparkGeo, mat);
 			mesh.visible = false;
@@ -58,9 +69,18 @@
 		for (const s of sparks) {
 			const angle = Math.random() * Math.PI * 2;
 			const speed = 1.2 + Math.random() * 1.8;
-			s.vx = Math.cos(angle) * speed; s.vy = 2.0 + Math.random() * 2.5; s.vz = Math.sin(angle) * speed;
-			s.life = 0; s.maxLife = 0.3 + Math.random() * 0.3; s.active = true; s.mesh.visible = true;
-			s.mesh.position.set((Math.random() - 0.5) * 0.1, Math.random() * 0.05, (Math.random() - 0.5) * 0.1);
+			s.vx = Math.cos(angle) * speed;
+			s.vy = 2.0 + Math.random() * 2.5;
+			s.vz = Math.sin(angle) * speed;
+			s.life = 0;
+			s.maxLife = 0.3 + Math.random() * 0.3;
+			s.active = true;
+			s.mesh.visible = true;
+			s.mesh.position.set(
+				(Math.random() - 0.5) * 0.1,
+				Math.random() * 0.05,
+				(Math.random() - 0.5) * 0.1
+			);
 			s.mesh.scale.setScalar(1);
 		}
 	};
@@ -95,12 +115,16 @@
 	$effect(() => {
 		if (gameState.status === 'starting') {
 			isDragging = false;
-			delivered  = false;
-			appearT    = 0;
+			delivered = false;
+			appearT = 0;
 			wasInRange = false;
 			impactCooldown = 0;
+			prevInteract = false;
 			decorationActions.reset();
-			if (groupRef) { groupRef.visible = true; groupRef.scale.setScalar(0); }
+			if (groupRef) {
+				groupRef.visible = true;
+				groupRef.scale.setScalar(0);
+			}
 			resetBody();
 		}
 	});
@@ -110,9 +134,15 @@
 		for (const s of sparks) {
 			if (!s.active) continue;
 			s.life += delta;
-			if (s.life >= s.maxLife) { s.active = false; s.mesh.visible = false; continue; }
+			if (s.life >= s.maxLife) {
+				s.active = false;
+				s.mesh.visible = false;
+				continue;
+			}
 			const t = s.life / s.maxLife;
-			s.vy -= 9 * delta; s.vx *= 1 - delta * 4; s.vz *= 1 - delta * 4;
+			s.vy -= 9 * delta;
+			s.vx *= 1 - delta * 4;
+			s.vz *= 1 - delta * 4;
 			s.mesh.position.x += s.vx * delta;
 			s.mesh.position.y += s.vy * delta;
 			s.mesh.position.z += s.vz * delta;
@@ -123,8 +153,14 @@
 		if (impactCooldown > 0) impactCooldown -= delta;
 
 		if (!groupRef || !decorBody || gameState.status !== 'playing') {
-			if (wasInRange)  { decorationState.pickupInRange = false; wasInRange = false; }
-			if (isDragging)  { isDragging = false; decorationActions.drop(); }
+			if (wasInRange) {
+				decorationState.pickupInRange = false;
+				wasInRange = false;
+			}
+			if (isDragging) {
+				isDragging = false;
+				decorationActions.drop();
+			}
 			return;
 		}
 
@@ -141,11 +177,13 @@
 		if (appearT < 1) {
 			appearT = Math.min(1, appearT + delta / 0.4);
 			const t = appearT;
-			const s = t < 0.6 ? (t / 0.6) * 1.2 : 1.2 - (t - 0.6) / 0.4 * 0.2;
+			const s = t < 0.6 ? (t / 0.6) * 1.2 : 1.2 - ((t - 0.6) / 0.4) * 0.2;
 			groupRef.scale.setScalar(Math.max(0, s));
 		}
 
-		const held = inputQueries.isPressed('player1', 'interact');
+		const interact     = inputQueries.isPressed('player1', 'interact');
+		const justPressed  = interact && !prevInteract;
+		prevInteract = interact;
 
 		if (!isDragging) {
 			// Range check against mouse position
@@ -153,17 +191,20 @@
 			const dy = mouseSharedPos.y - pos.y;
 			const dz = mouseSharedPos.z - pos.z;
 			const inRange = Math.sqrt(dx * dx + dy * dy + dz * dz) < PICKUP_RADIUS;
-			if (inRange !== wasInRange) { decorationState.pickupInRange = inRange; wasInRange = inRange; }
+			if (inRange !== wasInRange) {
+				decorationState.pickupInRange = inRange;
+				wasInRange = inRange;
+			}
 
-			if (held && inRange && !decorationState.carrying) {
+			if (justPressed && inRange && !decorationState.carrying) {
 				isDragging = true;
 				decorationActions.pickup();
 				spawnSparks(pos.x, pos.y, pos.z);
 				soundActions.playMouseEating();
 			}
 		} else {
-			// Drop on release
-			if (!held) {
+			// Second press → drop
+			if (justPressed) {
 				isDragging = false;
 				decorationActions.drop();
 				if (emissiveRef) emissiveRef.emissiveIntensity = 0.35;
@@ -198,13 +239,13 @@
 			const sy = spawnPosition[1] - pos.y;
 			const sz = spawnPosition[2] - pos.z;
 			const distToSpawn = Math.sqrt(sx * sx + sy * sy + sz * sz);
-			const nearSpawn   = distToSpawn < CAPTURE_RADIUS;
+			const nearSpawn = distToSpawn < CAPTURE_RADIUS;
 
 			if (nearSpawn !== decorationState.deliverInRange) decorationState.deliverInRange = nearSpawn;
 
 			if (nearSpawn) {
 				isDragging = false;
-				delivered  = true;
+				delivered = true;
 				decorationActions.deliver();
 				spawnSparks(pos.x, pos.y, pos.z);
 				soundActions.playSwoosh();
@@ -252,14 +293,26 @@
 			flatShading
 			metalness={0.2}
 			roughness={0.3}
-			oncreate={(ref) => { emissiveRef = ref; }}
+			oncreate={(ref) => {
+				emissiveRef = ref;
+			}}
 		/>
 	</T.Mesh>
 	<T.Mesh>
 		<T.OctahedronGeometry args={[0.045, 0]} />
-		<T.MeshStandardMaterial color="#f0abfc" emissive="#e879f9" emissiveIntensity={1.2} flatShading />
+		<T.MeshStandardMaterial
+			color="#f0abfc"
+			emissive="#e879f9"
+			emissiveIntensity={1.2}
+			flatShading
+		/>
 	</T.Mesh>
 	<T.PointLight color="#d946ef" intensity={0.9} distance={1.5} decay={2} position={[0, 0.1, 0]} />
 </T.Group>
 
-<T.Group oncreate={(ref) => { sparkGroupRef = ref; initSparks(ref); }} />
+<T.Group
+	oncreate={(ref) => {
+		sparkGroupRef = ref;
+		initSparks(ref);
+	}}
+/>
