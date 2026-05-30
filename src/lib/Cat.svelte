@@ -5,6 +5,9 @@
 	import { LoopRepeat } from 'three';
 	import * as THREE from 'three';
 
+	interface Props { pos?: { x: number; y: number; z: number } }
+	let { pos }: Props = $props();
+
 	const gltf = useGltf(`${BASE_URL}models/stages/cat.glb`);
 	const { actions } = useGltfAnimations(gltf);
 
@@ -54,6 +57,8 @@
 		const s = smoothStep(segT);
 
 		_catPos.lerpVectors(from, to, s);
+
+		if (pos) { pos.x = _catPos.x; pos.y = _catPos.y; pos.z = _catPos.z; }
 
 		if (catGroup) {
 			catGroup.position.copy(_catPos);
