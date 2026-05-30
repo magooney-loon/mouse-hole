@@ -13,7 +13,7 @@
 	type Props = { onBack: () => void };
 	let { onBack }: Props = $props();
 
-	type Tab = 'audio' | 'controls';
+	type Tab = 'general' | 'controls';
 	let activeTab = $state<Tab>('controls');
 
 	type ActionGroup = { label: string; icon: string; actions: InputAction[] };
@@ -22,21 +22,12 @@
 		{
 			label: 'Movement',
 			icon: '🐭',
-			actions: [
-				'moveForward',
-				'moveBackward',
-				'moveLeft',
-				'moveRight',
-				'strafeLeft',
-				'strafeRight',
-				'sprint',
-				'jump'
-			]
+			actions: ['moveForward', 'moveBackward', 'moveLeft', 'moveRight', 'jump']
 		},
 		{
-			label: 'Interaction',
-			icon: '🧀',
-			actions: ['interact']
+			label: 'Action',
+			icon: '🏃',
+			actions: ['strafeLeft', 'strafeRight', 'sprint', 'interact']
 		}
 	];
 
@@ -50,7 +41,6 @@
 		interact: 'Pick Up / Interact',
 		pause: 'Pause',
 		openSettings: 'Open Settings',
-		// unused — kept for type completeness
 		primaryAction: 'Primary Action',
 		secondaryAction: 'Secondary Action',
 		reload: 'Reload',
@@ -161,12 +151,11 @@
 		class="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-md"
 	>
 		<div
-			class="bg-black/60 border-4 border-black rounded-2xl p-8 text-white flex flex-col backdrop-blur-md
-			       {activeTab === 'controls' ? 'w-[26rem]' : 'w-96'}"
+			class="bg-black/60 border-4 border-black rounded-2xl p-8 text-white flex flex-col backdrop-blur-md w-[44rem] max-h-[80vh]"
 			style="box-shadow: 7px 7px 0 #000;"
 		>
 			<!-- Header -->
-			<div class="flex items-center gap-3 mb-6">
+			<div class="flex items-center gap-3 mb-5">
 				<span class="text-3xl select-none" aria-hidden="true">⚙️</span>
 				<h2
 					class="m-0 text-2xl font-black text-amber-300 uppercase"
@@ -178,10 +167,10 @@
 
 			<!-- Tab bar -->
 			<div
-				class="flex gap-2 mb-6 bg-black/40 border-4 border-black rounded-xl p-1"
+				class="flex gap-2 mb-5 bg-black/40 border-4 border-black rounded-xl p-1"
 				style="box-shadow: 3px 3px 0 #000;"
 			>
-				{#each [['controls', '🎮 Controls'], ['audio', '🔊 Audio']] as const as [id, label]}
+				{#each [['controls', '🎮 Controls'], ['general', '⚙️ General']] as const as [id, label]}
 					<button
 						onclick={() => switchTab(id)}
 						class="flex-1 py-2 rounded-lg text-sm font-black transition-all duration-100 cursor-pointer
@@ -214,7 +203,7 @@
 					</div>
 				{/if}
 
-				<div class="overflow-y-auto max-h-[55vh] flex flex-col gap-5 pr-1">
+				<div class="overflow-y-auto max-h-[52vh] grid grid-cols-2 gap-x-6 gap-y-5 pr-1">
 					{#each ACTION_GROUPS as group}
 						<div>
 							<p class="m-0 mb-2.5 text-xs font-black uppercase tracking-widest text-amber-400/70">
@@ -228,12 +217,12 @@
 									)}
 									{@const capturing = isCapturing && captureAction === action}
 									<div
-										class="flex items-center gap-2 rounded-xl px-3 py-2 border-2 transition-colors
+										class="flex items-center gap-2 rounded-lg px-2 py-1.5 border-2 transition-colors
 										       {capturing
 											? 'bg-amber-400/20 border-black'
 											: 'border-transparent hover:bg-white/5 hover:border-white/10'}"
 									>
-										<span class="text-sm w-36 shrink-0 text-white/70 font-bold">
+										<span class="text-xs w-28 shrink-0 text-white/70 font-bold">
 											{ACTION_LABELS[action]}
 										</span>
 
@@ -289,58 +278,69 @@
 					↺ Reset All Controls
 				</button>
 
-				<!-- Audio tab -->
-			{:else if activeTab === 'audio'}
-				<div class="mb-2 flex flex-col gap-5">
-					{#each [{ key: 'sfx', label: '🎵 Sound Effects', enabled: settingsState.audio.sfxEnabled, volume: settingsState.audio.sfxVolume, toggle: audioActions.toggleSfx, setVol: audioActions.setSfxVolume }, { key: 'music', label: '🎶 Music', enabled: settingsState.audio.musicEnabled, volume: settingsState.audio.musicVolume, toggle: audioActions.toggleMusic, setVol: audioActions.setMusicVolume }, { key: 'ambience', label: '🌙 Ambience', enabled: settingsState.audio.ambienceEnabled, volume: settingsState.audio.ambienceVolume, toggle: audioActions.toggleAmbience, setVol: audioActions.setAmbienceVolume }] as ch}
-						<div class="flex flex-col gap-2">
-							<label class="flex items-center gap-3 cursor-pointer text-sm font-black text-white">
-								<input
-									type="checkbox"
-									checked={ch.enabled}
-									onchange={() => ch.toggle()}
-									class="w-4 h-4 accent-amber-400 cursor-pointer"
-								/>
-								{ch.label}
-							</label>
-							<input
-								type="range"
-								min="0"
-								max="1"
-								step="0.01"
-								aria-label="{ch.label} volume"
-								value={ch.volume}
-								oninput={(e) => ch.setVol(+(e.target as HTMLInputElement).value)}
-								class="w-full accent-amber-400 cursor-pointer"
-								disabled={!ch.enabled}
-							/>
+				<!-- General tab -->
+			{:else if activeTab === 'general'}
+				<div class="flex flex-col gap-5">
+					<!-- Graphics -->
+					<div>
+						<p class="m-0 mb-3 text-xs font-black uppercase tracking-widest text-white/40">
+							🖥️ Graphics
+						</p>
+						<div class="flex gap-2">
+							{#each ['low', 'high'] as level}
+								<button
+									onclick={() => {
+										soundActions.playClick();
+										graphicsActions.setQuality(level as QualityLevel);
+									}}
+									class="flex-1 px-4 py-2.5 rounded-xl border-4 border-black font-black text-sm
+									       transition-all duration-100 capitalize cursor-pointer
+									       {settingsState.graphics.quality === level
+										? 'bg-amber-400 text-black'
+										: 'bg-white/10 text-white/50 hover:bg-white/15 hover:text-white/80'}"
+									style={settingsState.graphics.quality === level
+										? 'box-shadow: 3px 3px 0 #000;'
+										: ''}
+								>
+									{level === 'low' ? '🐌 Low' : '✨ High'}
+								</button>
+							{/each}
 						</div>
-					{/each}
-				</div>
+					</div>
 
-				<div class="mt-5 border-t-4 border-black/30 pt-5">
-					<p class="m-0 mb-3 text-xs font-black uppercase tracking-widest text-white/40">
-						🖥️ Graphics
-					</p>
-					<div class="flex gap-2">
-						{#each ['low', 'high'] as level}
-							<button
-								onclick={() => {
-									soundActions.playClick();
-									graphicsActions.setQuality(level as QualityLevel);
-								}}
-								class="flex-1 px-4 py-2.5 rounded-xl border-4 border-black font-black text-sm
-								       transition-all duration-100 capitalize cursor-pointer
-								       {settingsState.graphics.quality === level
-									? 'bg-amber-400 text-black'
-									: 'bg-white/10 text-white/50 hover:bg-white/15 hover:text-white/80'}"
-								style={settingsState.graphics.quality === level
-									? 'box-shadow: 3px 3px 0 #000;'
-									: ''}
-							>
-								{level === 'low' ? '🐌 Low' : '✨ High'}
-							</button>
-						{/each}
+					<!-- Audio -->
+					<div>
+						<p class="m-0 mb-3 text-xs font-black uppercase tracking-widest text-white/40">
+							🔊 Audio
+						</p>
+						<div class="flex flex-col gap-4">
+							{#each [{ key: 'sfx', label: '🎵 Sound Effects', enabled: settingsState.audio.sfxEnabled, volume: settingsState.audio.sfxVolume, toggle: audioActions.toggleSfx, setVol: audioActions.setSfxVolume }, { key: 'music', label: '🎶 Music', enabled: settingsState.audio.musicEnabled, volume: settingsState.audio.musicVolume, toggle: audioActions.toggleMusic, setVol: audioActions.setMusicVolume }, { key: 'ambience', label: '🌙 Ambience', enabled: settingsState.audio.ambienceEnabled, volume: settingsState.audio.ambienceVolume, toggle: audioActions.toggleAmbience, setVol: audioActions.setAmbienceVolume }] as ch}
+								<div class="flex flex-col gap-2">
+									<label
+										class="flex items-center gap-3 cursor-pointer text-sm font-black text-white"
+									>
+										<input
+											type="checkbox"
+											checked={ch.enabled}
+											onchange={() => ch.toggle()}
+											class="w-4 h-4 accent-amber-400 cursor-pointer"
+										/>
+										{ch.label}
+									</label>
+									<input
+										type="range"
+										min="0"
+										max="1"
+										step="0.01"
+										aria-label="{ch.label} volume"
+										value={ch.volume}
+										oninput={(e) => ch.setVol(+(e.target as HTMLInputElement).value)}
+										class="w-full accent-amber-400 cursor-pointer"
+										disabled={!ch.enabled}
+									/>
+								</div>
+							{/each}
+						</div>
 					</div>
 				</div>
 			{/if}
@@ -352,7 +352,7 @@
 					if (isCapturing) inputActions.cancelCapture();
 					onBack();
 				}}
-				class="mt-6 w-full px-4 py-3 font-black text-black bg-amber-400 border-4 border-black
+				class="mt-5 w-full px-4 py-3 font-black text-black bg-amber-400 border-4 border-black
 				       rounded-xl cursor-pointer transition-all duration-100
 				       hover:translate-x-[2px] hover:translate-y-[2px]
 				       active:translate-x-[5px] active:translate-y-[5px]"
