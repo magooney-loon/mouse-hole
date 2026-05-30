@@ -221,8 +221,8 @@
 					class="w-full py-4 text-xl font-black rounded-xl cursor-pointer
 					       bg-amber-400 text-black border-4 border-black
 					       transition-all duration-100
-					       hover:translate-x-[2px] hover:translate-y-[2px]
-					       active:translate-x-[4px] active:translate-y-[4px]"
+					hover:translate-x-0.5 hover:translate-y-0.5
+										       active:translate-x-1 active:translate-y-1"
 					style="box-shadow: 6px 6px 0 #000;"
 					onmousedown={(e) => (e.currentTarget.style.boxShadow = '2px 2px 0 #000')}
 					onmouseup={(e) => (e.currentTarget.style.boxShadow = '6px 6px 0 #000')}
@@ -240,8 +240,8 @@
 					class="w-full py-3 text-base font-black rounded-xl cursor-pointer
 					       bg-white/10 text-white border-4 border-black
 					       transition-all duration-100
-					       hover:translate-x-[2px] hover:translate-y-[2px]
-					       active:translate-x-[4px] active:translate-y-[4px]"
+					hover:translate-x-0.5 hover:translate-y-0.5
+										       active:translate-x-1 active:translate-y-1"
 					style="box-shadow: 4px 4px 0 #000;"
 					onmousedown={(e) => (e.currentTarget.style.boxShadow = '1px 1px 0 #000')}
 					onmouseup={(e) => (e.currentTarget.style.boxShadow = '4px 4px 0 #000')}

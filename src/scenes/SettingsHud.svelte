@@ -151,7 +151,7 @@
 		class="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-md"
 	>
 		<div
-			class="bg-black/60 border-4 border-black rounded-2xl p-8 text-white flex flex-col backdrop-blur-md w-[44rem] max-h-[80vh]"
+			class="bg-black/60 border-4 border-black rounded-2xl p-8 text-white flex flex-col backdrop-blur-md w-176 max-h-[80vh]"
 			style="box-shadow: 7px 7px 0 #000;"
 		>
 			<!-- Header -->
@@ -354,8 +354,8 @@
 				}}
 				class="mt-5 w-full px-4 py-3 font-black text-black bg-amber-400 border-4 border-black
 				       rounded-xl cursor-pointer transition-all duration-100
-				       hover:translate-x-[2px] hover:translate-y-[2px]
-				       active:translate-x-[5px] active:translate-y-[5px]"
+				hover:translate-x-0.5 hover:translate-y-0.5
+							       active:translate-x-1.25 active:translate-y-1.25"
 				style="box-shadow: 5px 5px 0 #000;"
 				onmousedown={(e) => (e.currentTarget.style.boxShadow = '1px 1px 0 #000')}
 				onmouseup={(e) => (e.currentTarget.style.boxShadow = '5px 5px 0 #000')}
