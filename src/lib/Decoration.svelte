@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { T, useTask } from '@threlte/core';
-	import { RigidBody, Collider } from '@threlte/rapier';
+	import { RigidBody, Collider, useRapier } from '@threlte/rapier';
 	import { onDestroy } from 'svelte';
 	import * as THREE from 'three';
 	import { inputQueries } from '$extensions/input/input.svelte';
@@ -17,6 +17,8 @@
 	}
 	let { position, spawnPosition, index }: Props = $props();
 
+	const { world, rapier } = useRapier();
+
 	const PICKUP_RADIUS = 1.1; // start dragging when mouse this close
 	const CAPTURE_RADIUS = 0.45; // auto-deliver when body this close to spawn
 	const DRAG_SPEED = 7; // max push velocity m/s
@@ -24,6 +26,10 @@
 	const PUSH_DIST = 0.55; // how far in front of mouse to target
 	const IMPACT_THRESHOLD = 30; // contact force threshold to play sound
 	const IMPACT_COOLDOWN = 0.35; // seconds between impact sounds
+	const WALL_CHECK_DIST = 0.16; // ray length for tunnel guard (ball radius 0.1 + 0.06 margin)
+	const STUCK_SPEED = 0.5; // m/s — below this while dist > STUCK_DIST = stuck
+	const STUCK_DIST = 0.25; // m from target while checking stuck
+	const STUCK_TIME = 0.3; // seconds before auto-drop at mouse feet
 
 	let isDragging = false;
 	let delivered = false;
@@ -31,6 +37,8 @@
 	let appearT = 0;
 	let impactCooldown = 0;
 	let prevInteract = false;
+	let stuckTimer = 0;
+	let pickupCooldown = 0;
 
 	let lightRef: THREE.PointLight | null = null;
 	let groupRef: THREE.Group | null = null;
@@ -115,6 +123,22 @@
 		}
 	};
 
+	const dropAtMouse = () => {
+		isDragging = false;
+		stuckTimer = 0;
+		decorationActions.drop();
+		if (decorBody) {
+			decorBody.setTranslation(
+				{ x: mouseSharedPos.x, y: mouseSharedPos.y + 0.25, z: mouseSharedPos.z },
+				true
+			);
+			decorBody.setLinvel({ x: 0, y: 0, z: 0 }, true);
+			decorBody.setAngvel({ x: 0, y: 0, z: 0 }, true);
+		}
+		if (lightRef) lightRef.intensity = 0.9;
+		if (decorationState.deliverInRange) decorationState.deliverInRange = false;
+	};
+
 	$effect(() => {
 		if (gameState.status === 'starting') {
 			isDragging = false;
@@ -123,6 +147,8 @@
 			wasInRange = false;
 			impactCooldown = 0;
 			prevInteract = false;
+			stuckTimer = 0;
+			pickupCooldown = 0;
 			decorationActions.reset();
 			if (groupRef) {
 				groupRef.visible = true;
@@ -201,14 +227,19 @@
 
 			if (justPressed && inRange && !decorationState.carrying) {
 				isDragging = true;
+				stuckTimer = 0;
+				pickupCooldown = 0.35;
 				decorationActions.pickup(index);
 				spawnSparks(pos.x, pos.y, pos.z);
 				soundActions.playMouseEating();
 			}
 		} else {
-			// Second press → drop
+			if (pickupCooldown > 0) pickupCooldown -= delta;
+
+			// Second press → drop in place
 			if (justPressed) {
 				isDragging = false;
+				stuckTimer = 0;
 				decorationActions.drop();
 				if (lightRef) lightRef.intensity = 0.9;
 				if (decorationState.deliverInRange) decorationState.deliverInRange = false;
@@ -221,28 +252,50 @@
 			const tx = mouseSharedPos.x + fwdX * PUSH_DIST;
 			const tz = mouseSharedPos.z + fwdZ * PUSH_DIST;
 
-			// XZ spring push — keep Y from physics (gravity + floor handle vertical)
 			const dx = tx - pos.x;
 			const dz = tz - pos.z;
 			const dist = Math.sqrt(dx * dx + dz * dz);
 
 			if (dist > 0.04) {
-				const speed = Math.min(dist * 13, DRAG_SPEED);
 				const inv = 1 / dist;
-				decorBody.setLinvel({ x: dx * inv * speed, y: vel.y, z: dz * inv * speed }, true);
+				const nx = dx * inv;
+				const nz = dz * inv;
+
+				// Anti-tunnel: cast a short ray in the push direction.
+				// If a wall is within WALL_CHECK_DIST, zero velocity instead of pushing through.
+				const wallRay = new rapier.Ray(
+					{ x: pos.x, y: pos.y + 0.05, z: pos.z },
+					{ x: nx, y: 0, z: nz }
+				);
+				const wallHit = world.castRay(wallRay, WALL_CHECK_DIST, false, undefined, undefined, undefined, decorBody);
+
+				if (!wallHit) {
+					const speed = Math.min(dist * 13, DRAG_SPEED);
+					decorBody.setLinvel({ x: nx * speed, y: vel.y, z: nz * speed }, true);
+				} else {
+					decorBody.setLinvel({ x: 0, y: vel.y, z: 0 }, true);
+				}
 			} else {
 				decorBody.setLinvel({ x: 0, y: vel.y, z: 0 }, true);
 			}
 
-			// Auto-drop if decoration got stuck and is too far away
+			// Stuck detection: blocked by wall or wedged → drop at mouse feet
+			const currentSpeed = Math.sqrt(vel.x * vel.x + vel.z * vel.z);
+			if (dist > STUCK_DIST && currentSpeed < STUCK_SPEED && pickupCooldown <= 0) {
+				stuckTimer += delta;
+				if (stuckTimer > STUCK_TIME) {
+					dropAtMouse();
+					return;
+				}
+			} else {
+				stuckTimer = 0;
+			}
+
+			// Distance safety net — item somehow far away → also drop at mouse feet
 			const dragDx = mouseSharedPos.x - pos.x;
 			const dragDz = mouseSharedPos.z - pos.z;
-			const dragDist = Math.sqrt(dragDx * dragDx + dragDz * dragDz);
-			if (dragDist > DRAG_MAX_DIST) {
-				isDragging = false;
-				decorationActions.drop();
-				if (lightRef) lightRef.intensity = 0.9;
-				if (decorationState.deliverInRange) decorationState.deliverInRange = false;
+			if (Math.sqrt(dragDx * dragDx + dragDz * dragDz) > DRAG_MAX_DIST) {
+				dropAtMouse();
 				return;
 			}
 
