@@ -28,7 +28,7 @@
 		// Pulse ring
 		if (outerRingRef) {
 			const pulse = Math.sin(pulseT * (active ? 4 : 2.5)) * 0.5 + 0.5;
-			outerRingRef.scale.setScalar(1 + pulse * 0.65);
+			outerRingRef.scale.setScalar(1 + pulse * 0.35);
 			if (outerMatRef) outerMatRef.opacity = 0.6 - pulse * 0.5;
 		}
 
@@ -62,7 +62,7 @@
 <T.Group position={[position[0], position[1], position[2]]}>
 	<!-- Base glow disc -->
 	<T.Mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.002, 0]}>
-		<T.CircleGeometry args={[0.55, 48]} />
+		<T.CircleGeometry args={[0.3, 48]} />
 		<T.MeshStandardMaterial
 			color="#f59e0b"
 			emissive="#f59e0b"
@@ -78,7 +78,7 @@
 
 	<!-- Static border ring -->
 	<T.Mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.003, 0]}>
-		<T.RingGeometry args={[0.5, 0.56, 48]} />
+		<T.RingGeometry args={[0.28, 0.32, 48]} />
 		<T.MeshStandardMaterial color="#f59e0b" emissive="#f59e0b" emissiveIntensity={0.6} />
 	</T.Mesh>
 
@@ -90,7 +90,7 @@
 			outerRingRef = ref;
 		}}
 	>
-		<T.RingGeometry args={[0.5, 0.56, 48]} />
+		<T.RingGeometry args={[0.28, 0.32, 48]} />
 		<T.MeshStandardMaterial
 			color="#f59e0b"
 			emissive="#f59e0b"
