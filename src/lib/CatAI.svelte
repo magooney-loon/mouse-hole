@@ -520,7 +520,6 @@
 
 	// ── Roaming direction picker ────────────────────────────────────────────────
 	// Scans 16 directions, scores each by forward clearance + corridor width,
-	// penalises U-turns, and skips clearly blocked directions.
 	const pickRoamDir = (t: { x: number; y: number; z: number }): number => {
 		const eyeY = t.y + CONE_EYE_HEIGHT;
 		let bestAngle = facingAngle; // fallback: keep going straight
@@ -540,11 +539,7 @@
 			const side2 = wallDist(t.x, eyeY, t.z, -Math.sin(sideA2), -Math.cos(sideA2), ROAM_PROBE_SIDE);
 			const corridor = Math.min(side1, side2);
 
-			// Penalise reversals — avoid doubling back on the same path
-			const turnDot = Math.cos(a - facingAngle); // 1 = straight, -1 = U-turn
-			const reversalPenalty = turnDot < -0.7 ? 0.4 : 1.0;
-
-			const score = (fwdClear * 0.65 + corridor * 0.25 + Math.random() * 0.1) * reversalPenalty;
+			const score = fwdClear * 0.65 + corridor * 0.25 + Math.random() * 0.1;
 
 			if (score > bestScore) {
 				bestScore = score;
@@ -726,8 +721,10 @@
 				const diff = shortestDiff(facingAngle, roamTargetAngle);
 				facingAngle += diff * Math.min(1, delta * 6.0);
 
-				// Slow down proportionally as a wall approaches so steering has time to take effect
-				const speedScale = Math.max(0.35, Math.min(1, fwdClear / 0.55));
+				// Scale speed: slow for walls ahead AND for large turns (don't walk into walls while turning)
+				const wallScale = Math.max(0.35, Math.min(1, fwdClear / 0.55));
+				const turnScale = Math.max(0.15, Math.abs(Math.cos(diff))); // 1 = straight, ~0 = U-turn
+				const speedScale = wallScale * turnScale;
 				desiredVX = -Math.sin(facingAngle) * CAT_WALK_SPEED * speedScale;
 				desiredVZ = -Math.cos(facingAngle) * CAT_WALK_SPEED * speedScale;
 				speed = CAT_WALK_SPEED;
