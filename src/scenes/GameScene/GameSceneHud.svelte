@@ -13,12 +13,20 @@
 	} from '$lib/decorationState.svelte';
 
 	const countdown = $derived(Math.ceil(gameState.startTimer));
+	const avgPerDecoration = $derived(
+		decorationState.deliveredCount > 0 ? gameState.elapsed / decorationState.deliveredCount : 0
+	);
 
 	$effect(() => {
 		if (gameState.status === 'game_over') {
 			untrack(() => {
 				soundActions.playMouseGameover();
 				soundActions.playKatzeWin();
+			});
+		}
+		if (gameState.status === 'win') {
+			untrack(() => {
+				soundActions.playMouseGameover();
 			});
 		}
 	});
@@ -35,7 +43,7 @@
 	</div>
 
 	<div class="absolute top-6 right-6 flex items-stretch gap-2">
-		{#if gameState.status === 'playing' || gameState.status === 'game_over'}
+		{#if gameState.status === 'playing' || gameState.status === 'game_over' || gameState.status === 'win'}
 			<div
 				class="bg-black/60 border-2 border-white/20 rounded-xl px-4 py-2 backdrop-blur-sm flex flex-col items-center gap-0.5"
 				style="box-shadow: 3px 3px 0 #000;"
@@ -50,7 +58,7 @@
 		{/if}
 
 		<!-- Decoration score -->
-		{#if gameState.status === 'playing' || gameState.status === 'game_over'}
+		{#if gameState.status === 'playing' || gameState.status === 'game_over' || gameState.status === 'win'}
 			<div
 				class="bg-black/60 border-2 border-purple-400/40 rounded-xl px-4 py-2 backdrop-blur-sm flex flex-col items-center gap-1"
 				style="box-shadow: 3px 3px 0 #000;"
@@ -188,6 +196,94 @@
 						when you must.
 					</p>
 				</div>
+			</div>
+		</div>
+	{/if}
+
+	<!-- Win screen -->
+	{#if gameState.status === 'win'}
+		<div
+			class="pointer-events-auto absolute inset-0 flex flex-col items-center justify-center gap-6 bg-black/70 backdrop-blur-sm"
+			transition:fade={{ duration: 500 }}
+		>
+			<div class="flex flex-col items-center gap-2">
+				<div class="text-7xl select-none">🏆</div>
+				<h2
+					class="text-6xl font-black text-amber-300 uppercase leading-none m-0"
+					style="text-shadow: 4px 4px 0 #000;"
+				>
+					You Win!
+				</h2>
+				<p class="text-white/50 font-black uppercase tracking-widest text-sm m-0">
+					All decorations delivered!
+				</p>
+			</div>
+
+			<div
+				class="bg-black/60 border-2 border-amber-400/40 rounded-xl px-6 py-4 backdrop-blur-sm flex flex-col items-center gap-2"
+				style="box-shadow: 3px 3px 0 #000;"
+			>
+				<div class="flex items-center gap-6">
+					<div class="flex flex-col items-center gap-0.5">
+						<span class="text-white/40 font-black uppercase tracking-widest text-xs">Total Time</span>
+						<span class="text-white font-black text-2xl tabular-nums leading-none">
+							{String(Math.floor(gameState.elapsed / 60)).padStart(2, '0')}:{String(
+								Math.floor(gameState.elapsed % 60)
+							).padStart(2, '0')}
+						</span>
+					</div>
+					<div class="w-px h-10 bg-white/10"></div>
+					<div class="flex flex-col items-center gap-0.5">
+						<span class="text-white/40 font-black uppercase tracking-widest text-xs"
+							>Avg / Item</span
+						>
+						<span class="text-amber-300 font-black text-2xl tabular-nums leading-none">
+							{avgPerDecoration.toFixed(1)}s
+						</span>
+					</div>
+				</div>
+			</div>
+
+			<div class="flex flex-col gap-3 w-64">
+				<button
+					onclick={() => {
+						soundActions.playClick();
+						gameActions.start();
+						soundActions.playKatzeIntro();
+						setTimeout(() => soundActions.playRandomMeow(), 2000);
+						setTimeout(() => soundActions.playRandomMeow(), 5000);
+					}}
+					class="w-full py-4 text-xl font-black rounded-xl cursor-pointer
+					       bg-amber-400 text-black border-4 border-black
+					       transition-all duration-100
+					hover:translate-x-0.5 hover:translate-y-0.5
+					       active:translate-x-1 active:translate-y-1"
+					style="box-shadow: 6px 6px 0 #000;"
+					onmousedown={(e) => (e.currentTarget.style.boxShadow = '2px 2px 0 #000')}
+					onmouseup={(e) => (e.currentTarget.style.boxShadow = '6px 6px 0 #000')}
+					onmouseleave={(e) => (e.currentTarget.style.boxShadow = '6px 6px 0 #000')}
+				>
+					🔄 Play Again
+				</button>
+
+				<button
+					onclick={() => {
+						soundActions.playClick();
+						gameActions.reset();
+						sceneActions.goToMainMenu();
+					}}
+					class="w-full py-3 text-base font-black rounded-xl cursor-pointer
+					       bg-white/10 text-white border-4 border-black
+					       transition-all duration-100
+					hover:translate-x-0.5 hover:translate-y-0.5
+					       active:translate-x-1 active:translate-y-1"
+					style="box-shadow: 4px 4px 0 #000;"
+					onmousedown={(e) => (e.currentTarget.style.boxShadow = '1px 1px 0 #000')}
+					onmouseup={(e) => (e.currentTarget.style.boxShadow = '4px 4px 0 #000')}
+					onmouseleave={(e) => (e.currentTarget.style.boxShadow = '4px 4px 0 #000')}
+				>
+					← Back to Menu
+				</button>
 			</div>
 		</div>
 	{/if}

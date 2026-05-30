@@ -1,4 +1,4 @@
-export type GameStatus = 'idle' | 'starting' | 'playing' | 'game_over';
+export type GameStatus = 'idle' | 'starting' | 'playing' | 'game_over' | 'win';
 
 const clamp = (v: number) => Math.max(0, Math.min(100, v));
 
@@ -21,6 +21,9 @@ export const gameActions = {
 		gameState.stamina = 100;
 		gameState.sound = 0;
 		gameState.elapsed = 0;
+	},
+	win() {
+		gameState.status = 'win';
 	},
 	reset() {
 		gameState.status = 'idle';

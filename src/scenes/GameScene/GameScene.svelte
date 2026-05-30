@@ -17,7 +17,7 @@
 	</T.Mesh>
 </T.Group> -->
 <Mouse />
-<CatAI />
+<!-- <CatAI /> -->
 <Cheese position={[1.29, 0, 2.14]} />
 <Cheese position={[8.127, 0, 1.407]} />
 <Cheese position={[6.352, 0, -7.188]} />

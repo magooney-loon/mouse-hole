@@ -1,3 +1,5 @@
+import { gameActions } from '$lib/gameState.svelte';
+
 export const DECORATION_TOTAL = 5;
 
 export const DECORATION_LABELS = ['Fork', 'Matchstick', 'Lighter', 'Phone', 'Thimble'];
@@ -35,6 +37,9 @@ export const decorationActions = {
 		decorationState.delivered[index] = true;
 		decorationState.deliveredCount++;
 		decorationState.deliverInRange = false;
+		if (decorationState.deliveredCount >= DECORATION_TOTAL) {
+			gameActions.win();
+		}
 	},
 	drop() {
 		decorationState.carrying = false;
