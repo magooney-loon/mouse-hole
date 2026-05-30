@@ -61,7 +61,7 @@
 
 	const spawnCrumbs = () => {
 		if (!crumbGroupRef) return;
-		crumbGroupRef.position.set(position[0], 0.1, position[2]);
+		crumbGroupRef.position.set(position[0], position[1] + 0.1, position[2]);
 		for (const c of crumbs) {
 			const angle = Math.random() * Math.PI * 2;
 			const speed = 1.5 + Math.random() * 2.2;
@@ -88,6 +88,8 @@
 
 	onDestroy(() => {
 		_crumbGeo.dispose();
+		bodyGeo.dispose();
+		rindGeo.dispose();
 		for (const c of crumbs) (c.mesh.material as THREE.Material).dispose();
 	});
 
@@ -131,9 +133,12 @@
 		bevelSegments: 2
 	};
 
-	const centerGeo = (geo: THREE.ExtrudeGeometry) => {
-		geo.translate(-WD / 2, 0, -WW / 2);
-	};
+	// Create geometries once as stable references — avoids Threlte recreating them on every re-render
+	const bodyGeo = new THREE.ExtrudeGeometry(cheeseBody, extOpts);
+	bodyGeo.translate(-WD / 2, 0, -WW / 2);
+
+	const rindGeo = new THREE.ExtrudeGeometry(cheeseRind, extOpts);
+	rindGeo.translate(-WD / 2, 0, -WW / 2);
 
 	// Reset on game restart
 	$effect(() => {
@@ -256,8 +261,8 @@
 	});
 </script>
 
-<!-- Outer group: stable world XZ from prop, never changes -->
-<T.Group position={[position[0], 0, position[2]]}>
+<!-- Outer group: stable world position from prop -->
+<T.Group position={[position[0], position[1], position[2]]}>
 	<!-- Floor indicator circle — outside inner group so it ignores bob/scale -->
 	<T.Mesh
 		rotation={[-Math.PI / 2, 0, 0]}
@@ -282,9 +287,8 @@
 			ref.scale.setScalar(0);
 		}}
 	>
-		<!-- Wedge body with Swiss holes -->
-		<T.Mesh castShadow rotation={[0, Math.PI / 6, 0]}>
-			<T.ExtrudeGeometry args={[cheeseBody, extOpts]} oncreate={(ref) => centerGeo(ref)} />
+		<!-- Wedge body — geometry created once imperatively, passed as stable ref -->
+		<T.Mesh castShadow rotation={[0, Math.PI / 6, 0]} geometry={bodyGeo}>
 			<T.MeshStandardMaterial
 				color="#f5c218"
 				flatShading
@@ -293,9 +297,8 @@
 			/>
 		</T.Mesh>
 
-		<!-- Rind (same shape, no holes, slightly larger, back-face only) -->
-		<T.Mesh scale={1.04} rotation={[0, Math.PI / 6, 0]}>
-			<T.ExtrudeGeometry args={[cheeseRind, extOpts]} oncreate={(ref) => centerGeo(ref)} />
+		<!-- Rind -->
+		<T.Mesh scale={1.04} rotation={[0, Math.PI / 6, 0]} geometry={rindGeo}>
 			<T.MeshStandardMaterial color="#c8900a" flatShading side={THREE.BackSide} />
 		</T.Mesh>
 
