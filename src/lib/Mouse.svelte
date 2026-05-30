@@ -2,6 +2,7 @@
 	import { onDestroy } from 'svelte';
 	import { T, useTask } from '@threlte/core';
 	import { RigidBody, Collider, useRapier } from '@threlte/rapier';
+	import { useGltf } from '@threlte/extras';
 	import { inputQueries, advanceInputFrame } from '$extensions/input/input.svelte';
 	import { tickGameState, gameState } from '$lib/gameState.svelte';
 	import {
@@ -12,7 +13,10 @@
 	} from '$lib/catAI.svelte';
 	import { decorationState } from '$lib/decorationState.svelte';
 	import { soundActions } from '$core/globalAudio.svelte';
+	import { BASE_URL } from '$extensions/settings/settings.svelte';
 	import * as THREE from 'three';
+
+	const gltf = useGltf(`${BASE_URL}models/stages/mouse.glb`);
 
 	const { world, rapier } = useRapier();
 
@@ -217,7 +221,15 @@
 
 			const fpY = t.y + EYE_HEIGHT;
 			const eyeRay = new rapier.Ray({ x: t.x, y: fpY, z: t.z }, { x: fwdX, y: 0, z: fwdZ });
-			const eyeHit = world.castRay(eyeRay, EYE_FWD, true, undefined, undefined, undefined, mouseBody);
+			const eyeHit = world.castRay(
+				eyeRay,
+				EYE_FWD,
+				true,
+				undefined,
+				undefined,
+				undefined,
+				mouseBody
+			);
 			const eyeFwd = eyeHit ? Math.max(0, eyeHit.timeOfImpact - EYE_MARGIN) : EYE_FWD;
 			const fpX = t.x + fwdX * eyeFwd;
 			const fpZ = t.z + fwdZ * eyeFwd;
@@ -284,54 +296,10 @@
 			}}
 		/>
 
-		<!-- Body -->
-		<T.Mesh castShadow position={[0, 0, 0.03]} scale={[1, 0.85, 1.4]}>
-			<T.SphereGeometry args={[0.1, 16, 12]} />
-			<T.MeshStandardMaterial color="#b8a890" flatShading />
-		</T.Mesh>
-
-		<!-- Head -->
-		<T.Mesh castShadow position={[0, 0.01, -0.12]}>
-			<T.SphereGeometry args={[0.085, 16, 12]} />
-			<T.MeshStandardMaterial color="#c2b29a" flatShading />
-		</T.Mesh>
-
-		<!-- Snout -->
-		<T.Mesh position={[0, -0.01, -0.2]} rotation={[-Math.PI / 2, 0, 0]}>
-			<T.ConeGeometry args={[0.05, 0.09, 12]} />
-			<T.MeshStandardMaterial color="#c2b29a" flatShading />
-		</T.Mesh>
-
-		<!-- Ears -->
-		<T.Mesh position={[-0.06, 0.08, -0.11]}>
-			<T.SphereGeometry args={[0.05, 12, 10]} />
-			<T.MeshStandardMaterial color="#e8b4a0" flatShading />
-		</T.Mesh>
-		<T.Mesh position={[0.06, 0.08, -0.11]}>
-			<T.SphereGeometry args={[0.05, 12, 10]} />
-			<T.MeshStandardMaterial color="#e8b4a0" flatShading />
-		</T.Mesh>
-
-		<!-- Eyes -->
-		<T.Mesh position={[-0.04, 0.03, -0.17]}>
-			<T.SphereGeometry args={[0.015, 8, 8]} />
-			<T.MeshStandardMaterial color="#1a1a1a" />
-		</T.Mesh>
-		<T.Mesh position={[0.04, 0.03, -0.17]}>
-			<T.SphereGeometry args={[0.015, 8, 8]} />
-			<T.MeshStandardMaterial color="#1a1a1a" />
-		</T.Mesh>
-
-		<!-- Nose tip -->
-		<T.Mesh position={[0, -0.01, -0.245]}>
-			<T.SphereGeometry args={[0.018, 8, 8]} />
-			<T.MeshStandardMaterial color="#d47a8a" flatShading />
-		</T.Mesh>
-
-		<!-- Tail -->
-		<T.Mesh position={[0, 0.04, 0.22]} rotation={[Math.PI / 2.4, 0, 0]}>
-			<T.CylinderGeometry args={[0.008, 0.018, 0.34, 8]} />
-			<T.MeshStandardMaterial color="#e8b4a0" flatShading />
-		</T.Mesh>
+		{#if $gltf}
+			<T.Group scale={0.1} position={[0, -0.08, 0]} rotation={[0, Math.PI, 0]}>
+				<T is={$gltf.scene} />
+			</T.Group>
+		{/if}
 	</RigidBody>
 </T.Group>
