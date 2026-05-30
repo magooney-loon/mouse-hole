@@ -316,7 +316,7 @@
 	}}
 />
 
-<T.Group position={[1.936, 1, -1.894]}>
+<T.Group position={[1.936, 1.1, -1.894]}>
 	<RigidBody
 		type="dynamic"
 		lockRotations
@@ -329,7 +329,7 @@
 	>
 		<Collider
 			shape="cuboid"
-			args={[0.1, 0.1, 0.16]}
+			args={[0.07, 0.1, 0.16]}
 			oncreate={(c) => c.setCollisionGroups(0xfffd0001)}
 		/>
 
