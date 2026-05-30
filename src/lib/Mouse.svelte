@@ -150,6 +150,10 @@
 		mouseSharedPos.y = t.y;
 		mouseSharedPos.z = t.z;
 
+		const _szDx = t.x - 1.936;
+		const _szDz = t.z - (-1.894);
+		gameState.inSafeZone = _szDx * _szDx + _szDz * _szDz < 1.1 * 1.1;
+
 		posLogTimer -= delta;
 		if (posLogTimer <= 0) {
 			posLogTimer = 2;
