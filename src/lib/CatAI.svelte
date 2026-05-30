@@ -84,10 +84,10 @@
 	const SIGHT_LOSS_TIMEOUT = 1.5;
 
 	// ── Avoidance constants ───────────────────────────────────────────────────
-	const AVOID_PROBE_DIST = 0.8; // how far ahead to check for walls
+	const AVOID_PROBE_DIST = 1.4; // how far ahead to check for walls
 	const AVOID_SIDE_ANGLE = Math.PI / 5; // ~36° side probe angle
-	const AVOID_STEER_WEIGHT = 0.7; // how strongly avoidance deflects heading
-	const AVOID_WALL_MARGIN = 0.35; // treat hits closer than this as "wall"
+	const AVOID_STEER_WEIGHT = 1.0; // how strongly avoidance deflects heading
+	const AVOID_WALL_MARGIN = 0.55; // treat hits closer than this as "wall"
 
 	const STUCK_TIME = 0.6; // seconds of no progress before stuck recovery
 	const STUCK_SPEED_THRESH = 0.2; // speed² below which = stuck
@@ -97,9 +97,9 @@
 	// ── Roaming constants ────────────────────────────────────────────────────
 	const ROAM_DIR_MIN_TIME = 2.0; // min seconds before picking new direction
 	const ROAM_DIR_MAX_TIME = 5.0; // max seconds before picking new direction
-	const ROAM_PROBE_FWD = 1.2; // forward probe distance for wall detection
-	const ROAM_PROBE_SIDE = 0.8; // side probe distance
-	const ROAM_PROBE_COUNT = 12; // directions scanned when picking new roam dir
+	const ROAM_PROBE_FWD = 1.5; // forward probe distance for wall detection
+	const ROAM_PROBE_SIDE = 1.0; // side probe distance
+	const ROAM_PROBE_COUNT = 16; // directions scanned when picking new roam dir
 
 	// ── Per-frame local state ─────────────────────────────────────────────────
 	let facingAngle = 0;
@@ -341,44 +341,74 @@
 	};
 
 	// ── Obstacle avoidance ────────────────────────────────────────────────────
-	// Casts forward, forward-left, forward-right probes and returns a steering
-	// angle adjustment that pushes away from nearby walls. Returns 0 if clear.
+	// Casts 5 probes (forward, diagonal ±36°, sideways ±90°) and returns a
+	// steering angle adjustment that pushes away from nearby walls.
 	const computeAvoidance = (t: { x: number; y: number; z: number }): number => {
 		const eyeY = t.y + CONE_EYE_HEIGHT;
 		let steer = 0;
 
-		// Forward probe
 		const fwdX = -Math.sin(facingAngle);
 		const fwdZ = -Math.cos(facingAngle);
 		const fwdDist = wallDist(t.x, eyeY, t.z, fwdX, fwdZ, AVOID_PROBE_DIST);
 
-		// Left probe (positive angle offset)
+		// Diagonal probes at ±36°
 		const lAngle = facingAngle + AVOID_SIDE_ANGLE;
-		const lX = -Math.sin(lAngle);
-		const lZ = -Math.cos(lAngle);
-		const leftDist = wallDist(t.x, eyeY, t.z, lX, lZ, AVOID_PROBE_DIST);
-
-		// Right probe (negative angle offset)
+		const leftDist = wallDist(
+			t.x,
+			eyeY,
+			t.z,
+			-Math.sin(lAngle),
+			-Math.cos(lAngle),
+			AVOID_PROBE_DIST
+		);
 		const rAngle = facingAngle - AVOID_SIDE_ANGLE;
-		const rX = -Math.sin(rAngle);
-		const rZ = -Math.cos(rAngle);
-		const rightDist = wallDist(t.x, eyeY, t.z, rX, rZ, AVOID_PROBE_DIST);
+		const rightDist = wallDist(
+			t.x,
+			eyeY,
+			t.z,
+			-Math.sin(rAngle),
+			-Math.cos(rAngle),
+			AVOID_PROBE_DIST
+		);
 
-		// Wall on left → steer right (negative angle change)
+		// 90° side probes — catches walls the cat is sliding along
+		const l90 = facingAngle + Math.PI / 2;
+		const left90Dist = wallDist(
+			t.x,
+			eyeY,
+			t.z,
+			-Math.sin(l90),
+			-Math.cos(l90),
+			AVOID_WALL_MARGIN * 1.5
+		);
+		const r90 = facingAngle - Math.PI / 2;
+		const right90Dist = wallDist(
+			t.x,
+			eyeY,
+			t.z,
+			-Math.sin(r90),
+			-Math.cos(r90),
+			AVOID_WALL_MARGIN * 1.5
+		);
+
+		// Diagonal walls
 		if (leftDist < AVOID_WALL_MARGIN) {
-			const urgency = 1 - leftDist / AVOID_WALL_MARGIN;
-			steer -= urgency * AVOID_STEER_WEIGHT;
+			steer -= (1 - leftDist / AVOID_WALL_MARGIN) * AVOID_STEER_WEIGHT;
 		}
-		// Wall on right → steer left (positive angle change)
 		if (rightDist < AVOID_WALL_MARGIN) {
-			const urgency = 1 - rightDist / AVOID_WALL_MARGIN;
-			steer += urgency * AVOID_STEER_WEIGHT;
+			steer += (1 - rightDist / AVOID_WALL_MARGIN) * AVOID_STEER_WEIGHT;
 		}
-		// Wall dead ahead → pick the clearer side and steer hard
+		// Side walls — gentle push so the cat doesn't scrape along them
+		if (left90Dist < AVOID_WALL_MARGIN) {
+			steer -= (1 - left90Dist / AVOID_WALL_MARGIN) * AVOID_STEER_WEIGHT * 0.5;
+		}
+		if (right90Dist < AVOID_WALL_MARGIN) {
+			steer += (1 - right90Dist / AVOID_WALL_MARGIN) * AVOID_STEER_WEIGHT * 0.5;
+		}
+		// Wall dead ahead — hard steer toward the clearer side
 		if (fwdDist < AVOID_WALL_MARGIN) {
 			const urgency = 1 - fwdDist / AVOID_WALL_MARGIN;
-			// Steer toward whichever side has more room
-			steer += (leftDist > rightDist ? -1 : 1) * urgency * AVOID_STEER_WEIGHT * 1.5;
+			steer += (leftDist > rightDist ? -1 : 1) * urgency * AVOID_STEER_WEIGHT * 2.0;
 		}
 
 		return steer;
@@ -421,11 +451,11 @@
 	};
 
 	// ── Roaming direction picker ────────────────────────────────────────────────
-	// Scans around the cat and picks the most open direction to walk toward.
-	// Optionally biased away from a "danger zone" direction to avoid backtracking.
+	// Scans 16 directions, scores each by forward clearance + corridor width,
+	// penalises U-turns, and skips clearly blocked directions.
 	const pickRoamDir = (t: { x: number; y: number; z: number }): number => {
 		const eyeY = t.y + CONE_EYE_HEIGHT;
-		let bestAngle = Math.random() * Math.PI * 2;
+		let bestAngle = facingAngle; // fallback: keep going straight
 		let bestScore = -1;
 
 		for (let i = 0; i < ROAM_PROBE_COUNT; i++) {
@@ -433,17 +463,20 @@
 			const dx = -Math.sin(a);
 			const dz = -Math.cos(a);
 
-			// Forward clearance
 			const fwdClear = wallDist(t.x, eyeY, t.z, dx, dz, ROAM_PROBE_FWD);
-			// Side clearance (perpendicular — checks corridor width)
+			if (fwdClear < 0.35) continue; // basically blocked — skip
+
 			const sideA1 = a + Math.PI / 2;
 			const sideA2 = a - Math.PI / 2;
 			const side1 = wallDist(t.x, eyeY, t.z, -Math.sin(sideA1), -Math.cos(sideA1), ROAM_PROBE_SIDE);
 			const side2 = wallDist(t.x, eyeY, t.z, -Math.sin(sideA2), -Math.cos(sideA2), ROAM_PROBE_SIDE);
 			const corridor = Math.min(side1, side2);
 
-			// Score: forward clearance + corridor width + small random for variety
-			const score = fwdClear * 0.6 + corridor * 0.3 + Math.random() * 0.3;
+			// Penalise reversals — avoid doubling back on the same path
+			const turnDot = Math.cos(a - facingAngle); // 1 = straight, -1 = U-turn
+			const reversalPenalty = turnDot < -0.7 ? 0.4 : 1.0;
+
+			const score = (fwdClear * 0.65 + corridor * 0.25 + Math.random() * 0.1) * reversalPenalty;
 
 			if (score > bestScore) {
 				bestScore = score;
@@ -586,10 +619,8 @@
 
 		switch (catAIState.mode) {
 			case 'patrol': {
-				// Smart roaming: walk forward, avoid walls, pick new directions periodically
 				roamTimer -= delta;
 
-				// Check if wall dead ahead — force an early direction change
 				const fwdX = -Math.sin(facingAngle);
 				const fwdZ = -Math.cos(facingAngle);
 				const fwdClear = wallDist(
@@ -598,22 +629,22 @@
 					t.z,
 					fwdX,
 					fwdZ,
-					ROAM_PROBE_FWD * 0.6
+					ROAM_PROBE_FWD * 0.7
 				);
 
-				if (roamTimer <= 0 || fwdClear < 0.3) {
-					// Pick a new roam direction — favour open corridors
+				if (roamTimer <= 0 || fwdClear < 0.55) {
 					roamTargetAngle = pickRoamDir(t);
 					roamTimer = ROAM_DIR_MIN_TIME + Math.random() * (ROAM_DIR_MAX_TIME - ROAM_DIR_MIN_TIME);
 				}
 
-				// Steer toward roamTargetAngle
+				// Faster turn rate so the cat actually faces the new direction before hitting the wall
 				const diff = shortestDiff(facingAngle, roamTargetAngle);
-				facingAngle += diff * Math.min(1, delta * 3.0);
+				facingAngle += diff * Math.min(1, delta * 6.0);
 
-				// Walk forward along current facing
-				desiredVX = -Math.sin(facingAngle) * CAT_WALK_SPEED;
-				desiredVZ = -Math.cos(facingAngle) * CAT_WALK_SPEED;
+				// Slow down proportionally as a wall approaches so steering has time to take effect
+				const speedScale = Math.max(0.35, Math.min(1, fwdClear / 0.55));
+				desiredVX = -Math.sin(facingAngle) * CAT_WALK_SPEED * speedScale;
+				desiredVZ = -Math.cos(facingAngle) * CAT_WALK_SPEED * speedScale;
 				speed = CAT_WALK_SPEED;
 				shouldMove = true;
 				break;
@@ -665,15 +696,17 @@
 		if (shouldMove) {
 			const steer = computeAvoidance(t);
 			if (steer !== 0) {
-				// Rotate the desired velocity direction by the steer angle
 				const cos = Math.cos(steer);
 				const sin = Math.sin(steer);
 				const newVX = desiredVX * cos - desiredVZ * sin;
 				const newVZ = desiredVX * sin + desiredVZ * cos;
 				desiredVX = newVX;
 				desiredVZ = newVZ;
-				// Also adjust facing to match new heading
 				facingAngle += steer * delta * 4;
+				// Commit the avoidance to roamTargetAngle so the cat doesn't oscillate back
+				if (catAIState.mode === 'patrol') {
+					roamTargetAngle = facingAngle + steer;
+				}
 			}
 		}
 
@@ -779,7 +812,7 @@
 		</T.Mesh>
 
 		{#if $gltf}
-			<T.Group scale={0.02} position={[0, -0.45, 0.15]} rotation={[0, Math.PI, 0]}>
+			<T.Group scale={0.02} position={[0, -0.45, 0.35]} rotation={[0, Math.PI, 0]}>
 				<T is={$gltf.scene} />
 			</T.Group>
 		{/if}
