@@ -4,6 +4,7 @@
 	import { RigidBody, Collider, useRapier } from '@threlte/rapier';
 	import { inputQueries, advanceInputFrame } from '$extensions/input/input.svelte';
 	import { tickGameState, gameState } from '$lib/gameState.svelte';
+	import { soundActions } from '$core/globalAudio.svelte';
 	import * as THREE from 'three';
 
 	const { world, rapier } = useRapier();
@@ -16,6 +17,19 @@
 		mouseBody = null;
 		mouseObj = null;
 		gameCam = null;
+	});
+
+	// Teleport back to spawn whenever a new game starts.
+	$effect(() => {
+		if (gameState.status === 'starting' && mouseBody) {
+			mouseBody.setTranslation({ x: 1.936, y: 1, z: -1.894 }, true);
+			mouseBody.setLinvel({ x: 0, y: 0, z: 0 }, true);
+			mouseBody.setAngvel({ x: 0, y: 0, z: 0 }, true);
+			facingAngle = 4.341;
+			curVelX = 0;
+			curVelZ = 0;
+			camInitialized = false;
+		}
 	});
 
 	const TURN_RATE = 2.8;
@@ -59,7 +73,7 @@
 	useTask((delta) => {
 		if (!mouseBody || !gameCam) return;
 
-		const locked = gameState.status === 'starting' || gameState.status === 'idle';
+		const locked = gameState.status !== 'playing';
 		const move = locked ? { x: 0, y: 0 } : inputQueries.getMoveVector('player1');
 		const grounded = isGrounded();
 
@@ -89,6 +103,7 @@
 		let velY = vel.y;
 		if (inputQueries.wasPressed('player1', 'jump') && grounded) {
 			velY = JUMP_VELOCITY;
+			soundActions.playMouseJump();
 		}
 
 		mouseBody.setLinvel({ x: curVelX, y: velY, z: curVelZ }, true);
@@ -138,6 +153,8 @@
 		const sprinting = inputQueries.isPressed('player1', 'sprint') && grounded;
 		const moving = Math.abs(move.x) > 0.1 || Math.abs(move.y) > 0.1;
 		tickGameState(delta, sprinting, moving, !grounded);
+
+		soundActions.setWalkState(!grounded || !moving ? 'stopped' : sprinting ? 'sprinting' : 'walking');
 
 		advanceInputFrame();
 	});

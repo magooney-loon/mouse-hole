@@ -20,6 +20,7 @@ export const gameActions = {
 	},
 	reset() {
 		gameState.status = 'idle';
+		gameState.startTimer = 0;
 		gameState.hunger = 80;
 		gameState.stamina = 100;
 		gameState.sound = 0;
