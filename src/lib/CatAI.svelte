@@ -132,10 +132,11 @@
 	const _hitDir = new THREE.Vector3();
 	const _rayDir = new THREE.Vector3();
 	const _conePositions = new Float32Array((CONE_SEGMENTS + 2) * 3);
+	const _coneDistances = new Float32Array(CONE_SEGMENTS + 2); // normalized distance from origin for shader
 
 	// ── Vision cone refs (updated imperatively in the task) ──────────────────
 	let coneGroupRef: THREE.Group | null = null;
-	let coneMatRef: THREE.MeshBasicMaterial | null = null;
+	let coneMatRef: THREE.ShaderMaterial | null = null;
 	let coneGeoRef: THREE.BufferGeometry<THREE.NormalBufferAttributes> | null = null;
 
 	// ── Perception ────────────────────────────────────────────────────────────
@@ -235,6 +236,7 @@
 		_conePositions[0] = 0;
 		_conePositions[1] = 0;
 		_conePositions[2] = 0;
+		_coneDistances[0] = 0;
 
 		for (let i = 0; i <= CONE_SEGMENTS; i += 1) {
 			const a = -CAT_SIGHT_HALF_ANGLE + (i / CONE_SEGMENTS) * CAT_SIGHT_HALF_ANGLE * 2;
@@ -252,24 +254,32 @@
 			_conePositions[offset] = localX * dist;
 			_conePositions[offset + 1] = 0;
 			_conePositions[offset + 2] = localZ * dist;
+			_coneDistances[i + 1] = dist / CAT_SIGHT_RANGE;
 		}
 
-		const attr = coneGeoRef.getAttribute('position') as THREE.BufferAttribute;
-		attr.needsUpdate = true;
+		const posAttr = coneGeoRef.getAttribute('position') as THREE.BufferAttribute;
+		posAttr.needsUpdate = true;
+
+		const distAttr = coneGeoRef.getAttribute('aDist') as THREE.BufferAttribute;
+		if (distAttr) distAttr.needsUpdate = true;
+
 		coneGeoRef.computeBoundingSphere();
 
 		if (catAIState.mode !== prevMode) {
 			prevMode = catAIState.mode;
-			coneMatRef?.color.setHex(
+			const color =
 				catAIState.mode === 'chase'
-					? 0xff3333
+					? [1.0, 0.2, 0.2]
 					: catAIState.mode === 'search'
-						? 0xffaa00
+						? [1.0, 0.67, 0.0]
 						: catAIState.mode === 'investigate'
-							? 0xffff00
-							: 0x44ff44
-			);
+							? [1.0, 1.0, 0.0]
+							: [0.27, 1.0, 0.27];
+			coneMatRef?.uniforms.uColor.value.set(color[0], color[1], color[2]);
 		}
+
+		// Animate time uniform
+		if (coneMatRef) coneMatRef.uniforms.uTime.value = performance.now() * 0.001;
 	};
 
 	const canHear = (): boolean => {
@@ -701,7 +711,7 @@
 		</T.Mesh>
 
 		{#if $gltf}
-			<T.Group scale={0.02} position={[0, -0.4, 0]} rotation={[0, Math.PI, 0]}>
+			<T.Group scale={0.02} position={[0, -0.45, 0]} rotation={[0, Math.PI, 0]}>
 				<T is={$gltf.scene} />
 			</T.Group>
 		{/if}
@@ -718,18 +728,57 @@
 			oncreate={(ref) => {
 				coneGeoRef = ref as THREE.BufferGeometry<THREE.NormalBufferAttributes>;
 				ref.setAttribute('position', new THREE.BufferAttribute(_conePositions, 3));
+				ref.setAttribute('aDist', new THREE.BufferAttribute(_coneDistances, 1));
 				ref.setIndex(coneIndices);
 			}}
 		/>
-		<T.MeshBasicMaterial
-			color={0x44ff44}
+		<T.ShaderMaterial
 			transparent
-			opacity={0.18}
 			depthWrite={false}
 			side={THREE.DoubleSide}
 			oncreate={(ref) => {
 				coneMatRef = ref;
 			}}
+			uniforms={{
+				uColor: { value: new THREE.Color(0.27, 1.0, 0.27) },
+				uTime: { value: 0 }
+			}}
+			vertexShader={`
+				attribute float aDist;
+				varying float vDist;
+				void main() {
+					vDist = aDist;
+					gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+				}
+			`}
+			fragmentShader={`
+				uniform vec3 uColor;
+				uniform float uTime;
+				varying float vDist;
+
+				void main() {
+					// Radial fade: strong at center, transparent at edge
+					float alpha = (1.0 - vDist) * 0.35;
+
+					// Soft edge fade at the tip
+					alpha *= smoothstep(1.0, 0.85, vDist);
+
+					// Subtle pulse
+					float pulse = 0.85 + 0.15 * sin(uTime * 2.0);
+					alpha *= pulse;
+
+					// Scan line sweep
+					float scan = smoothstep(0.0, 0.06, abs(vDist - fract(uTime * 0.3)));
+					float scanBright = 1.0 - scan * 0.6;
+					alpha *= scanBright;
+
+					// Center glow
+					float glow = exp(-vDist * 3.0) * 0.15;
+					alpha += glow;
+
+					gl_FragColor = vec4(uColor, alpha);
+				}
+			`}
 		/>
 	</T.Mesh>
 </T.Group>
