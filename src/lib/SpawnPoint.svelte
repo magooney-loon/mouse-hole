@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { T, useTask } from '@threlte/core';
 	import * as THREE from 'three';
-	import { decorationState } from '$lib/decorationState.svelte';
+	import { decorationState, SNAP_OFFSETS } from '$lib/decorationState.svelte';
 
 	interface Props {
 		position: [number, number, number];
@@ -12,7 +12,9 @@
 	let glowMatRef: THREE.MeshStandardMaterial | null = null;
 	let outerMatRef: THREE.MeshStandardMaterial | null = null;
 	let houseGroupRef: THREE.Group | null = null;
+	let slotRefs: (THREE.Group | null)[] = [];
 	let pulseT = 0;
+	let prevDeliveredCount = 0;
 
 	const COL_IDLE = new THREE.Color('#f59e0b');
 	const COL_ACTIVE = new THREE.Color('#4ade80');
@@ -34,6 +36,16 @@
 		if (houseGroupRef) {
 			houseGroupRef.position.y = 0.35 + Math.sin(pulseT * 1.4) * 0.06;
 			houseGroupRef.rotation.y = pulseT * 0.5;
+		}
+
+		// Show/hide pre-created decoration slots (no allocations)
+		if (decorationState.deliveredCount !== prevDeliveredCount) {
+			for (let i = 0; i < SNAP_OFFSETS.length; i++) {
+				if (slotRefs[i]) {
+					slotRefs[i]!.visible = i < decorationState.deliveredCount;
+				}
+			}
+			prevDeliveredCount = decorationState.deliveredCount;
 		}
 
 		// Colour: idle amber → active green
@@ -94,6 +106,38 @@
 			}}
 		/>
 	</T.Mesh>
+
+	<!-- ── Pre-created decoration slots (hidden until delivered) ─────────── -->
+	{#each SNAP_OFFSETS as offset, i}
+		<T.Group
+			position={[offset[0], offset[1], offset[2]]}
+			visible={false}
+			oncreate={(ref) => {
+				slotRefs[i] = ref;
+			}}
+		>
+			<T.Mesh castShadow>
+				<T.OctahedronGeometry args={[0.07, 0]} />
+				<T.MeshStandardMaterial
+					color="#a855f7"
+					emissive="#a855f7"
+					emissiveIntensity={0.35}
+					flatShading
+					metalness={0.2}
+					roughness={0.3}
+				/>
+			</T.Mesh>
+			<T.Mesh>
+				<T.OctahedronGeometry args={[0.035, 0]} />
+				<T.MeshStandardMaterial
+					color="#f0abfc"
+					emissive="#e879f9"
+					emissiveIntensity={1.2}
+					flatShading
+				/>
+			</T.Mesh>
+		</T.Group>
+	{/each}
 
 	<!-- Floating house icon -->
 	<T.Group
