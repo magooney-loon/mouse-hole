@@ -8,12 +8,14 @@
 	import { decorationState, decorationActions } from '$lib/decorationState.svelte';
 	import { mouseSharedPos, mouseSharedFacing } from '$lib/catAI.svelte';
 	import { soundActions } from '$core/globalAudio.svelte';
+	import DecorationShape from './DecorationShape.svelte';
 
 	interface Props {
 		position: [number, number, number];
 		spawnPosition: [number, number, number];
+		index: number;
 	}
-	let { position, spawnPosition }: Props = $props();
+	let { position, spawnPosition, index }: Props = $props();
 
 	const PICKUP_RADIUS = 1.1; // start dragging when mouse this close
 	const CAPTURE_RADIUS = 0.45; // auto-deliver when body this close to spawn
@@ -29,7 +31,7 @@
 	let impactCooldown = 0;
 	let prevInteract = false;
 
-	let emissiveRef: THREE.MeshStandardMaterial | null = null;
+	let lightRef: THREE.PointLight | null = null;
 	let groupRef: THREE.Group | null = null;
 	let decorBody: any = null;
 
@@ -181,8 +183,8 @@
 			groupRef.scale.setScalar(Math.max(0, s));
 		}
 
-		const interact     = inputQueries.isPressed('player1', 'interact');
-		const justPressed  = interact && !prevInteract;
+		const interact = inputQueries.isPressed('player1', 'interact');
+		const justPressed = interact && !prevInteract;
 		prevInteract = interact;
 
 		if (!isDragging) {
@@ -207,7 +209,7 @@
 			if (justPressed) {
 				isDragging = false;
 				decorationActions.drop();
-				if (emissiveRef) emissiveRef.emissiveIntensity = 0.35;
+				if (lightRef) lightRef.intensity = 0.9;
 				if (decorationState.deliverInRange) decorationState.deliverInRange = false;
 				return;
 			}
@@ -231,8 +233,8 @@
 				decorBody.setLinvel({ x: 0, y: vel.y, z: 0 }, true);
 			}
 
-			// Emissive pulse while dragging
-			if (emissiveRef) emissiveRef.emissiveIntensity = 0.55 + Math.sin(Date.now() * 0.005) * 0.2;
+			// Glow pulse while dragging
+			if (lightRef) lightRef.intensity = 1.5 + Math.sin(Date.now() * 0.005) * 0.8;
 
 			// Auto-capture at spawn (check body position, not mouse)
 			const sx = spawnPosition[0] - pos.x;
@@ -246,11 +248,11 @@
 			if (nearSpawn) {
 				isDragging = false;
 				delivered = true;
-				decorationActions.deliver();
+				decorationActions.deliver(index);
 				spawnSparks(pos.x, pos.y, pos.z);
 				soundActions.playSwoosh();
 				if (groupRef) groupRef.visible = false;
-				if (emissiveRef) emissiveRef.emissiveIntensity = 0.35;
+				if (lightRef) lightRef.intensity = 0.9;
 				hideBody();
 			}
 		}
@@ -284,30 +286,17 @@
 		ref.scale.setScalar(0);
 	}}
 >
-	<T.Mesh castShadow>
-		<T.OctahedronGeometry args={[0.1, 0]} />
-		<T.MeshStandardMaterial
-			color="#a855f7"
-			emissive="#a855f7"
-			emissiveIntensity={0.35}
-			flatShading
-			metalness={0.2}
-			roughness={0.3}
-			oncreate={(ref) => {
-				emissiveRef = ref;
-			}}
-		/>
-	</T.Mesh>
-	<T.Mesh>
-		<T.OctahedronGeometry args={[0.045, 0]} />
-		<T.MeshStandardMaterial
-			color="#f0abfc"
-			emissive="#e879f9"
-			emissiveIntensity={1.2}
-			flatShading
-		/>
-	</T.Mesh>
-	<T.PointLight color="#d946ef" intensity={0.9} distance={1.5} decay={2} position={[0, 0.1, 0]} />
+	<DecorationShape {index} />
+	<T.PointLight
+		color="#d946ef"
+		intensity={0.9}
+		distance={1.5}
+		decay={2}
+		position={[0, 0.1, 0]}
+		oncreate={(ref) => {
+			lightRef = ref;
+		}}
+	/>
 </T.Group>
 
 <T.Group

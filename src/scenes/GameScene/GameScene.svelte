@@ -22,7 +22,9 @@
 <Cheese position={[8.127, 0, 1.407]} />
 <Cheese position={[6.352, 0, -7.188]} />
 
-<Decoration position={[7.156, 0.879, -8.027]} spawnPosition={[1.936, 0.05, -1.894]} />
-<Decoration position={[3.5, 0.5, -5.0]} spawnPosition={[1.936, 0.05, -1.894]} />
-<Decoration position={[-1.5, 0.5, -3.0]} spawnPosition={[1.936, 0.05, -1.894]} />
+<Decoration position={[7.156, 0.879, -8.027]} spawnPosition={[1.936, 0.05, -1.894]} index={0} />
+<Decoration position={[3.5, 0.5, -5.0]} spawnPosition={[1.936, 0.05, -1.894]} index={1} />
+<Decoration position={[-1.5, 0.5, -3.0]} spawnPosition={[1.936, 0.05, -1.894]} index={2} />
+<Decoration position={[5.0, 0.5, 4.0]} spawnPosition={[1.936, 0.05, -1.894]} index={3} />
+<Decoration position={[0.5, 0.5, -6.0]} spawnPosition={[1.936, 0.05, -1.894]} index={4} />
 <SpawnPoint position={[1.936, 0.05, -1.894]} />
