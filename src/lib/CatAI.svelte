@@ -49,7 +49,10 @@
 	const CAT_HEAR_BASE = 2;
 	const CAT_HEAR_MAX = 10;
 	const CONE_SEGMENTS = 24;
-	const CONE_EYE_HEIGHT = 0.3;
+	const CONE_V_RINGS = 5; // vertical layers for 3D shape
+	const CONE_V_HALF = Math.PI / 6; // 30° up/down vertical FOV
+	const CONE_EYE_HEIGHT = 0.05; // just above body center (model offset is -0.4)
+	const CONE_FORWARD = 0.35; // push origin forward from body center
 
 	const ARRIVE_DIST = 1.0;
 	const CATCH_DIST = 0.78;
@@ -131,8 +134,10 @@
 	const _toMouseFlat = new THREE.Vector3();
 	const _hitDir = new THREE.Vector3();
 	const _rayDir = new THREE.Vector3();
-	const _conePositions = new Float32Array((CONE_SEGMENTS + 2) * 3);
-	const _coneDistances = new Float32Array(CONE_SEGMENTS + 2); // normalized distance from origin for shader
+	const _coneVertCount = 1 + CONE_V_RINGS * (CONE_SEGMENTS + 1);
+	const _conePositions = new Float32Array(_coneVertCount * 3);
+	const _coneDistances = new Float32Array(_coneVertCount);
+	const _segDists = new Float32Array(CONE_SEGMENTS + 1); // per-segment ray distances (reused across rings)
 
 	// ── Vision cone refs (updated imperatively in the task) ──────────────────
 	let coneGroupRef: THREE.Group | null = null;
@@ -230,31 +235,53 @@
 	const updateVisionCone = (t: { x: number; y: number; z: number }) => {
 		if (!coneGroupRef || !coneGeoRef) return;
 
-		coneGroupRef.position.set(t.x, t.y + CONE_EYE_HEIGHT, t.z);
-		coneGroupRef.rotation.y = facingAngle;
+		// Position cone at eye level, pushed forward from body center
+		const fwdX = -Math.sin(facingAngle) * CONE_FORWARD;
+		const fwdZ = -Math.cos(facingAngle) * CONE_FORWARD;
+		const now = performance.now() * 0.001;
 
+		coneGroupRef.position.set(t.x + fwdX, t.y + CONE_EYE_HEIGHT, t.z + fwdZ);
+		coneGroupRef.rotation.y = facingAngle;
+		// Scanning tilt — slow sinusoidal up/down
+		coneGroupRef.rotation.x = Math.sin(now * 0.8) * 0.18;
+
+		const eyeY = t.y + CONE_EYE_HEIGHT;
+
+		// Apex vertex (index 0)
 		_conePositions[0] = 0;
 		_conePositions[1] = 0;
 		_conePositions[2] = 0;
 		_coneDistances[0] = 0;
 
-		for (let i = 0; i <= CONE_SEGMENTS; i += 1) {
-			const a = -CAT_SIGHT_HALF_ANGLE + (i / CONE_SEGMENTS) * CAT_SIGHT_HALF_ANGLE * 2;
-			const localX = -Math.sin(a);
-			const localZ = -Math.cos(a);
-			const worldAngle = facingAngle + a;
+		// Step 1: cast horizontal rays to get per-segment distances
+		for (let s = 0; s <= CONE_SEGMENTS; s++) {
+			const hAngle = -CAT_SIGHT_HALF_ANGLE + (s / CONE_SEGMENTS) * CAT_SIGHT_HALF_ANGLE * 2;
+			const worldAngle = facingAngle + hAngle;
 			_rayDir.set(-Math.sin(worldAngle), 0, -Math.cos(worldAngle));
 			const rayDist = firstRayHitDist(
-				{ x: t.x, y: t.y + CONE_EYE_HEIGHT, z: t.z },
+				{ x: t.x + fwdX, y: eyeY, z: t.z + fwdZ },
 				{ x: _rayDir.x, y: _rayDir.y, z: _rayDir.z },
 				CAT_SIGHT_RANGE
 			);
-			const dist = Math.max(0.05, rayDist - 0.04);
-			const offset = (i + 1) * 3;
-			_conePositions[offset] = localX * dist;
-			_conePositions[offset + 1] = 0;
-			_conePositions[offset + 2] = localZ * dist;
-			_coneDistances[i + 1] = dist / CAT_SIGHT_RANGE;
+			_segDists[s] = Math.max(0.05, rayDist - 0.04);
+		}
+
+		// Step 2: build 3D rings using the horizontal distances
+		for (let r = 0; r < CONE_V_RINGS; r++) {
+			const vAngle = -CONE_V_HALF + (r / (CONE_V_RINGS - 1)) * CONE_V_HALF * 2;
+			const cosV = Math.cos(vAngle);
+			const sinV = Math.sin(vAngle);
+
+			for (let s = 0; s <= CONE_SEGMENTS; s++) {
+				const hAngle = -CAT_SIGHT_HALF_ANGLE + (s / CONE_SEGMENTS) * CAT_SIGHT_HALF_ANGLE * 2;
+				const dist = _segDists[s];
+
+				const idx = 1 + r * (CONE_SEGMENTS + 1) + s;
+				_conePositions[idx * 3] = -Math.sin(hAngle) * dist * cosV;
+				_conePositions[idx * 3 + 1] = sinV * dist;
+				_conePositions[idx * 3 + 2] = -Math.cos(hAngle) * dist * cosV;
+				_coneDistances[idx] = dist / CAT_SIGHT_RANGE;
+			}
 		}
 
 		const posAttr = coneGeoRef.getAttribute('position') as THREE.BufferAttribute;
@@ -278,8 +305,7 @@
 			coneMatRef?.uniforms.uColor.value.set(color[0], color[1], color[2]);
 		}
 
-		// Animate time uniform
-		if (coneMatRef) coneMatRef.uniforms.uTime.value = performance.now() * 0.001;
+		if (coneMatRef) coneMatRef.uniforms.uTime.value = now;
 	};
 
 	const canHear = (): boolean => {
@@ -688,7 +714,21 @@
 		updateVisionCone(t);
 	});
 
-	const coneIndices = Array.from({ length: CONE_SEGMENTS }, (_, i) => [0, i + 1, i + 2]).flat();
+	// Build indices: apex → first ring, then ring-to-ring strips
+	const coneIndices: number[] = [];
+	// Apex (vertex 0) to first ring
+	for (let s = 0; s < CONE_SEGMENTS; s++) {
+		coneIndices.push(0, 1 + s, 1 + s + 1);
+	}
+	// Ring-to-ring strips
+	for (let r = 0; r < CONE_V_RINGS - 1; r++) {
+		const row = 1 + r * (CONE_SEGMENTS + 1);
+		const nextRow = 1 + (r + 1) * (CONE_SEGMENTS + 1);
+		for (let s = 0; s < CONE_SEGMENTS; s++) {
+			coneIndices.push(row + s, row + s + 1, nextRow + s);
+			coneIndices.push(nextRow + s, row + s + 1, nextRow + s + 1);
+		}
+	}
 </script>
 
 <T.Group position={[8.127, 1, 1.407]}>
