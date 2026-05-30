@@ -831,11 +831,11 @@
 			catBody = rb;
 		}}
 	>
-		<Collider shape="cuboid" args={[0.36, 0.3, 0.6]} oncreate={(c) => c.setCollisionGroups(0xFFFE0002)} />
+		<Collider shape="cuboid" args={[0.22, 0.3, 0.6]} oncreate={(c) => c.setCollisionGroups(0xFFFE0002)} />
 
 		<!-- Debug: collider visualization (remove when done) -->
 		<T.Mesh>
-			<T.BoxGeometry args={[0.72, 0.6, 1.2]} />
+			<T.BoxGeometry args={[0.44, 0.6, 1.2]} />
 			<T.MeshBasicMaterial color={0xff0000} wireframe transparent opacity={0.5} />
 		</T.Mesh>
 
