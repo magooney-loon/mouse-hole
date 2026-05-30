@@ -127,13 +127,23 @@
 		<!-- Walls — centered at y=0, spans -0.04 to +0.04 -->
 		<T.Mesh>
 			<T.BoxGeometry args={[0.1, 0.08, 0.1]} />
-			<T.MeshStandardMaterial color="#fcd97d" emissive="#f59e0b" emissiveIntensity={0.2} flatShading />
+			<T.MeshStandardMaterial
+				color="#fcd97d"
+				emissive="#f59e0b"
+				emissiveIntensity={0.2}
+				flatShading
+			/>
 		</T.Mesh>
 
 		<!-- Eave ledge — sits right at the top of the walls -->
 		<T.Mesh position={[0, 0.04, 0]}>
 			<T.BoxGeometry args={[0.115, 0.007, 0.115]} />
-			<T.MeshStandardMaterial color="#c0392b" emissive="#c0392b" emissiveIntensity={0.15} flatShading />
+			<T.MeshStandardMaterial
+				color="#c0392b"
+				emissive="#c0392b"
+				emissiveIntensity={0.15}
+				flatShading
+			/>
 		</T.Mesh>
 
 		<!-- Hip roof (4-sided pyramid)
@@ -141,13 +151,23 @@
 		     Positioned so its base sits on top of the walls (y=0.04). -->
 		<T.Mesh position={[0, 0.078, 0]} rotation={[0, Math.PI / 4, 0]}>
 			<T.ConeGeometry args={[0.1, 0.076, 4]} />
-			<T.MeshStandardMaterial color="#e8453c" emissive="#e8453c" emissiveIntensity={0.3} flatShading />
+			<T.MeshStandardMaterial
+				color="#e8453c"
+				emissive="#e8453c"
+				emissiveIntensity={0.3}
+				flatShading
+			/>
 		</T.Mesh>
 
 		<!-- Door -->
 		<T.Mesh position={[0, -0.018, 0.051]}>
 			<T.BoxGeometry args={[0.03, 0.046, 0.002]} />
-			<T.MeshStandardMaterial color="#7B4F2E" emissive="#7B4F2E" emissiveIntensity={0.1} flatShading />
+			<T.MeshStandardMaterial
+				color="#7B4F2E"
+				emissive="#7B4F2E"
+				emissiveIntensity={0.1}
+				flatShading
+			/>
 		</T.Mesh>
 
 		<!-- Door arch (half-cylinder on top of door) -->

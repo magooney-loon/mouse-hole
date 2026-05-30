@@ -15,7 +15,7 @@
 	let catBody: any = null;
 
 	// ── Model & animation ─────────────────────────────────────────────────────
-	const gltf = useGltf(`${BASE_URL}models/stages/cat.glb`);
+	const gltf = useGltf(`${BASE_URL}models/stages/katze.glb`);
 	const { actions } = useGltfAnimations(gltf);
 	let anim: any = null;
 

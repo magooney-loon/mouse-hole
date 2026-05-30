@@ -10,7 +10,7 @@
 	}
 	let { pos }: Props = $props();
 
-	const gltf = useGltf(`${BASE_URL}models/stages/cat.glb`);
+	const gltf = useGltf(`${BASE_URL}models/stages/katze.glb`);
 	const { actions } = useGltfAnimations(gltf);
 
 	$effect(() => {

@@ -189,7 +189,7 @@
 		if (delivered) return;
 
 		const pos = decorBody.translation();
-		const vel = decorBody.linvel();
+		let vel = decorBody.linvel();
 
 		// Sync visual to physics body
 		groupRef.position.set(pos.x, pos.y, pos.z);
@@ -254,7 +254,7 @@
 				return;
 			}
 
-			// Target: floor level in front of the mouse
+			// Target: in front of the mouse, matching its height
 			const fwdX = -Math.sin(mouseSharedFacing.angle);
 			const fwdZ = -Math.cos(mouseSharedFacing.angle);
 			const tx = mouseSharedPos.x + fwdX * PUSH_DIST;
@@ -263,6 +263,13 @@
 			const dx = tx - pos.x;
 			const dz = tz - pos.z;
 			const dist = Math.sqrt(dx * dx + dz * dz);
+
+			// Vertical follow — carry ball upward when mouse jumps
+			const dy = mouseSharedPos.y - pos.y;
+			if (dy > 0.1) {
+				decorBody.setLinvel({ x: vel.x, y: Math.min(dy * 10, 8), z: vel.z }, true);
+				vel = decorBody.linvel();
+			}
 
 			if (dist > 0.04) {
 				const inv = 1 / dist;
