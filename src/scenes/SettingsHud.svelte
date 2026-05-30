@@ -22,7 +22,16 @@
 		{
 			label: 'Movement',
 			icon: '🐭',
-			actions: ['moveForward', 'moveBackward', 'moveLeft', 'moveRight', 'sprint', 'jump']
+			actions: [
+				'moveForward',
+				'moveBackward',
+				'moveLeft',
+				'moveRight',
+				'strafeLeft',
+				'strafeRight',
+				'sprint',
+				'jump'
+			]
 		},
 		{
 			label: 'Interaction',
@@ -54,7 +63,9 @@
 		slot2: 'Slot 2',
 		slot3: 'Slot 3',
 		slot4: 'Slot 4',
-		toggleUi: 'Toggle UI'
+		toggleUi: 'Toggle UI',
+		strafeLeft: 'Strafe Left',
+		strafeRight: 'Strafe Right'
 	};
 
 	const KEY_CODE_LABELS: Record<string, string> = {
@@ -160,19 +171,21 @@
 				<h2
 					class="m-0 text-2xl font-black text-amber-300 uppercase"
 					style="text-shadow: 2px 2px 0 #000;"
-				>Settings</h2>
+				>
+					Settings
+				</h2>
 			</div>
 
 			<!-- Tab bar -->
-			<div class="flex gap-2 mb-6 bg-black/40 border-4 border-black rounded-xl p-1"
-			     style="box-shadow: 3px 3px 0 #000;">
+			<div
+				class="flex gap-2 mb-6 bg-black/40 border-4 border-black rounded-xl p-1"
+				style="box-shadow: 3px 3px 0 #000;"
+			>
 				{#each [['controls', '🎮 Controls'], ['audio', '🔊 Audio']] as const as [id, label]}
 					<button
 						onclick={() => switchTab(id)}
 						class="flex-1 py-2 rounded-lg text-sm font-black transition-all duration-100 cursor-pointer
-						       {activeTab === id
-							? 'bg-amber-400 text-black'
-							: 'text-white/40 hover:text-white/70'}"
+						       {activeTab === id ? 'bg-amber-400 text-black' : 'text-white/40 hover:text-white/70'}"
 					>
 						{label}
 					</button>
@@ -188,7 +201,8 @@
 						style="box-shadow: 3px 3px 0 #000;"
 					>
 						<span class="animate-pulse text-white font-bold">
-							Binding <strong class="text-amber-300">{ACTION_LABELS[captureAction]}</strong> — press a key or click…
+							Binding <strong class="text-amber-300">{ACTION_LABELS[captureAction]}</strong> — press a
+							key or click…
 						</span>
 						<button
 							onclick={cancelCapture}
@@ -204,11 +218,14 @@
 					{#each ACTION_GROUPS as group}
 						<div>
 							<p class="m-0 mb-2.5 text-xs font-black uppercase tracking-widest text-amber-400/70">
-								{group.icon} {group.label}
+								{group.icon}
+								{group.label}
 							</p>
 							<div class="flex flex-col gap-1.5">
 								{#each group.actions as action}
-									{@const bindings = (inputState.players.player1.actions[action] ?? []).filter(b => b.device === 'keyboard' || b.device === 'mouse')}
+									{@const bindings = (inputState.players.player1.actions[action] ?? []).filter(
+										(b) => b.device === 'keyboard' || b.device === 'mouse'
+									)}
 									{@const capturing = isCapturing && captureAction === action}
 									<div
 										class="flex items-center gap-2 rounded-xl px-3 py-2 border-2 transition-colors
@@ -226,7 +243,9 @@
 													class="inline-flex items-center gap-1 bg-amber-400 border-2 border-black rounded px-1.5 py-0.5"
 													style="box-shadow: 2px 2px 0 #000;"
 												>
-													<kbd class="font-black text-xs leading-none text-black">{formatBinding(b)}</kbd>
+													<kbd class="font-black text-xs leading-none text-black"
+														>{formatBinding(b)}</kbd
+													>
 													<button
 														onclick={() => removeBinding(action, b.id)}
 														class="text-black/50 hover:text-black transition-opacity cursor-pointer leading-none text-xs font-black"
@@ -236,7 +255,9 @@
 											{/each}
 
 											{#if capturing}
-												<span class="text-xs text-amber-400/60 italic self-center font-bold">waiting…</span>
+												<span class="text-xs text-amber-400/60 italic self-center font-bold"
+													>waiting…</span
+												>
 											{:else}
 												<button
 													onclick={() => startBind(action)}
@@ -268,14 +289,10 @@
 					↺ Reset All Controls
 				</button>
 
-			<!-- Audio tab -->
+				<!-- Audio tab -->
 			{:else if activeTab === 'audio'}
 				<div class="mb-2 flex flex-col gap-5">
-					{#each [
-						{ key: 'sfx', label: '🎵 Sound Effects', enabled: settingsState.audio.sfxEnabled, volume: settingsState.audio.sfxVolume, toggle: audioActions.toggleSfx, setVol: audioActions.setSfxVolume },
-						{ key: 'music', label: '🎶 Music', enabled: settingsState.audio.musicEnabled, volume: settingsState.audio.musicVolume, toggle: audioActions.toggleMusic, setVol: audioActions.setMusicVolume },
-						{ key: 'ambience', label: '🌙 Ambience', enabled: settingsState.audio.ambienceEnabled, volume: settingsState.audio.ambienceVolume, toggle: audioActions.toggleAmbience, setVol: audioActions.setAmbienceVolume }
-					] as ch}
+					{#each [{ key: 'sfx', label: '🎵 Sound Effects', enabled: settingsState.audio.sfxEnabled, volume: settingsState.audio.sfxVolume, toggle: audioActions.toggleSfx, setVol: audioActions.setSfxVolume }, { key: 'music', label: '🎶 Music', enabled: settingsState.audio.musicEnabled, volume: settingsState.audio.musicVolume, toggle: audioActions.toggleMusic, setVol: audioActions.setMusicVolume }, { key: 'ambience', label: '🌙 Ambience', enabled: settingsState.audio.ambienceEnabled, volume: settingsState.audio.ambienceVolume, toggle: audioActions.toggleAmbience, setVol: audioActions.setAmbienceVolume }] as ch}
 						<div class="flex flex-col gap-2">
 							<label class="flex items-center gap-3 cursor-pointer text-sm font-black text-white">
 								<input
@@ -317,7 +334,9 @@
 								       {settingsState.graphics.quality === level
 									? 'bg-amber-400 text-black'
 									: 'bg-white/10 text-white/50 hover:bg-white/15 hover:text-white/80'}"
-								style={settingsState.graphics.quality === level ? 'box-shadow: 3px 3px 0 #000;' : ''}
+								style={settingsState.graphics.quality === level
+									? 'box-shadow: 3px 3px 0 #000;'
+									: ''}
 							>
 								{level === 'low' ? '🐌 Low' : '✨ High'}
 							</button>

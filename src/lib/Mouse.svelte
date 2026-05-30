@@ -102,8 +102,15 @@
 
 		const fwdX = -Math.sin(facingAngle);
 		const fwdZ = -Math.cos(facingAngle);
-		const targetVX = fwdX * move.y * speed;
-		const targetVZ = fwdZ * move.y * speed;
+		const rightX = Math.cos(facingAngle); // perpendicular right
+		const rightZ = -Math.sin(facingAngle);
+
+		const strafeL = locked ? false : inputQueries.isPressed('player1', 'strafeLeft');
+		const strafeR = locked ? false : inputQueries.isPressed('player1', 'strafeRight');
+		const strafe = (strafeR ? 1 : 0) - (strafeL ? 1 : 0);
+
+		const targetVX = (fwdX * move.y + rightX * strafe) * speed;
+		const targetVZ = (fwdZ * move.y + rightZ * strafe) * speed;
 
 		const k = Math.min(1, delta * (grounded ? 16 : 5));
 		curVelX += (targetVX - curVelX) * k;
@@ -171,7 +178,8 @@
 		gameCam.lookAt(_lookAt);
 
 		const sprinting = inputQueries.isPressed('player1', 'sprint') && grounded;
-		const moving = Math.abs(move.x) > 0.1 || Math.abs(move.y) > 0.1;
+		const strafing = Math.abs(strafe) > 0.1;
+		const moving = Math.abs(move.y) > 0.1 || strafing;
 		tickGameState(delta, sprinting, moving, !grounded);
 
 		soundActions.setWalkState(

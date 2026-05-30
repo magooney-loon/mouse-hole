@@ -19,7 +19,6 @@
 </script>
 
 <div class="pointer-events-none absolute inset-0" transition:fly={{ y: 12, duration: 220 }}>
-
 	<!-- Stats — top left -->
 	<div class="absolute top-6 left-6">
 		<PlayerStats
@@ -51,12 +50,12 @@
 				</p>
 
 				<div class="grid grid-cols-2 gap-x-6 gap-y-2.5">
-					{#each [['WASD', 'Move'], ['Shift', 'Sprint (loud!)'], ['Space', 'Jump'], ['E', 'Interact']] as [key, desc]}
+					{#each [['WASD', 'Move'], ['Q/E', 'Strafe'], ['Shift', 'Sprint (loud!)'], ['Space', 'Jump'], ['F', 'Interact']] as [key, desc]}
 						<div class="flex items-center gap-2">
 							<kbd
 								class="bg-amber-400 text-black border-2 border-black rounded px-1.5 py-0.5 font-black text-xs leading-none shrink-0"
-								style="box-shadow: 2px 2px 0 #000;"
-							>{key}</kbd>
+								style="box-shadow: 2px 2px 0 #000;">{key}</kbd
+							>
 							<span class="text-xs text-white/60 font-bold">{desc}</span>
 						</div>
 					{/each}
@@ -64,13 +63,17 @@
 
 				<div class="border-t-2 border-white/10 pt-3 flex flex-col gap-1.5">
 					<p class="m-0 text-xs text-white/50 leading-relaxed">
-						🏡 <strong class="text-amber-300">Goal:</strong> find all decorations scattered around the house and bring them back to your cozy mouse hole. You can only carry <strong class="text-amber-300">one at a time</strong>.
+						🏡 <strong class="text-amber-300">Goal:</strong> find all decorations scattered around
+						the house and bring them back to your cozy mouse hole. You can only carry
+						<strong class="text-amber-300">one at a time</strong>.
 					</p>
 					<p class="m-0 text-xs text-white/50 leading-relaxed">
-						🍖 <strong class="text-amber-300">Hunger drains</strong> while you're outside. Forage for food to survive.
+						🍖 <strong class="text-amber-300">Hunger drains</strong> while you're outside. Forage for
+						food to survive.
 					</p>
 					<p class="m-0 text-xs text-white/50 leading-relaxed">
-						🔊 <strong class="text-red-400">Sound attracts the cat.</strong> Walk silently, sprint only when you must.
+						🔊 <strong class="text-red-400">Sound attracts the cat.</strong> Walk silently, sprint only
+						when you must.
 					</p>
 				</div>
 			</div>
@@ -91,9 +94,7 @@
 				>
 					Game Over
 				</h2>
-				<p class="text-white/50 font-black uppercase tracking-widest text-sm m-0">
-					You starved...
-				</p>
+				<p class="text-white/50 font-black uppercase tracking-widest text-sm m-0">You starved...</p>
 			</div>
 
 			<div class="flex flex-col gap-3 w-64">
@@ -119,7 +120,11 @@
 				</button>
 
 				<button
-					onclick={() => { soundActions.playClick(); gameActions.reset(); sceneActions.goToMainMenu(); }}
+					onclick={() => {
+						soundActions.playClick();
+						gameActions.reset();
+						sceneActions.goToMainMenu();
+					}}
 					class="w-full py-3 text-base font-black rounded-xl cursor-pointer
 					       bg-white/10 text-white border-4 border-black
 					       transition-all duration-100
@@ -135,5 +140,4 @@
 			</div>
 		</div>
 	{/if}
-
 </div>

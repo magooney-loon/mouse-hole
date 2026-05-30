@@ -37,13 +37,13 @@
 
 			<!-- Controls — single row -->
 			<div class="flex gap-5 flex-wrap justify-center">
-				{#each [['WASD', 'move'], ['Shift', 'sprint'], ['Space', 'jump'], ['E', 'interact']] as [key, label]}
+				{#each [['WASD', 'move'], ['Q/E', 'strafe'], ['Shift', 'sprint'], ['Space', 'jump'], ['F', 'interact']] as [key, label]}
 					<span class="flex items-center gap-1.5">
 						<kbd
 							class="bg-amber-400 text-black border-2 border-black rounded px-1.5 py-0.5
 							       font-black text-xs leading-none"
-							style="box-shadow: 2px 2px 0 #000;"
-						>{key}</kbd>
+							style="box-shadow: 2px 2px 0 #000;">{key}</kbd
+						>
 						<span class="text-xs text-white/50 font-bold">{label}</span>
 					</span>
 				{/each}
@@ -85,7 +85,10 @@
 					</a>
 
 					<button
-						onclick={() => { soundActions.playClick(); showSettings = true; }}
+						onclick={() => {
+							soundActions.playClick();
+							showSettings = true;
+						}}
 						class="{btnBase} py-3 text-base bg-white/10 text-white"
 						style="box-shadow: 4px 4px 0 #000;"
 						onmousedown={(e) => (e.currentTarget.style.boxShadow = '1px 1px 0 #000')}
@@ -99,5 +102,10 @@
 		</div>
 	</div>
 {:else}
-	<SettingsHud onBack={() => { soundActions.playClick(); showSettings = false; }} />
+	<SettingsHud
+		onBack={() => {
+			soundActions.playClick();
+			showSettings = false;
+		}}
+	/>
 {/if}

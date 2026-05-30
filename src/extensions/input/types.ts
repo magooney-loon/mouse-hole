@@ -7,6 +7,8 @@ export type InputAction =
 	| 'moveBackward'
 	| 'moveLeft'
 	| 'moveRight'
+	| 'strafeLeft'
+	| 'strafeRight'
 	| 'jump'
 	| 'sprint'
 	| 'interact'

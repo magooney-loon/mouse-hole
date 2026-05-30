@@ -41,10 +41,7 @@ const gp = (button: GamepadButton): GamepadButtonBinding => ({
 	device: 'gamepad',
 	button
 });
-const ga = (
-	axis: GamepadAxis,
-	direction?: 'positive' | 'negative'
-): GamepadAxisBinding => ({
+const ga = (axis: GamepadAxis, direction?: 'positive' | 'negative'): GamepadAxisBinding => ({
 	id: newId(),
 	device: 'gamepad-axis',
 	axis,
@@ -56,6 +53,8 @@ const ALL_ACTIONS: InputAction[] = [
 	'moveBackward',
 	'moveLeft',
 	'moveRight',
+	'strafeLeft',
+	'strafeRight',
 	'jump',
 	'sprint',
 	'interact',
@@ -76,7 +75,6 @@ const ALL_ACTIONS: InputAction[] = [
 	'openSettings'
 ];
 
-
 const defaultPlayer1Actions = (): Record<InputAction, AnyBinding[]> => ({
 	moveForward: [kb('KeyW'), kb('ArrowUp'), gp('directionalTop')],
 	moveBackward: [kb('KeyS'), kb('ArrowDown'), gp('directionalBottom')],
@@ -84,11 +82,11 @@ const defaultPlayer1Actions = (): Record<InputAction, AnyBinding[]> => ({
 	moveRight: [kb('KeyD'), kb('ArrowRight'), gp('directionalRight')],
 	jump: [kb('Space'), gp('clusterBottom')],
 	sprint: [kb('ShiftLeft'), kb('ShiftRight'), gp('leftStickButton')],
-	interact: [kb('KeyE'), gp('clusterRight')],
+	interact: [kb('KeyF'), gp('clusterRight')],
 	primaryAction: [mb('left'), gp('rightTrigger')],
-	secondaryAction: [mb('right'), kb('KeyQ'), gp('leftTrigger')],
+	secondaryAction: [mb('right'), gp('leftTrigger')],
 	reload: [kb('KeyR'), gp('clusterLeft')],
-	use: [kb('KeyF'), gp('leftBumper')],
+	use: [gp('leftBumper')],
 	crouch: [kb('KeyC'), gp('rightStickButton')],
 	drop: [kb('KeyX')],
 	prone: [kb('KeyZ')],
@@ -99,7 +97,9 @@ const defaultPlayer1Actions = (): Record<InputAction, AnyBinding[]> => ({
 	slot4: [kb('Digit4')],
 	pause: [kb('Escape'), gp('start')],
 	toggleUi: [],
-	openSettings: [kb('Comma'), gp('select')]
+	openSettings: [kb('Comma'), gp('select')],
+	strafeLeft: [kb('KeyQ')],
+	strafeRight: [kb('KeyE')]
 });
 
 const defaultPlayer1Axes = (): Record<InputAxisAction, GamepadAxisBinding | null> => ({
@@ -152,7 +152,10 @@ const loadFromStorage = (): Record<PlayerId, PlayerInputMap> | null => {
 
 const saveToStorage = (players: Record<PlayerId, PlayerInputMap>): void => {
 	try {
-		localStorage.setItem(INPUT_SETTINGS_KEY, JSON.stringify({ version: SETTINGS_VERSION, players }));
+		localStorage.setItem(
+			INPUT_SETTINGS_KEY,
+			JSON.stringify({ version: SETTINGS_VERSION, players })
+		);
 	} catch {
 		/* ignore */
 	}
