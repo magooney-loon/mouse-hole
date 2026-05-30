@@ -8,9 +8,9 @@
 	near={0.001}
 	far={144}
 	makeDefault
-	position={[0, 5, 12]}
+	position={[1.29, 0.45, 2.14]}
 	oncreate={(ref) => {
-		ref.lookAt(0, 0, 0);
+		ref.lookAt(3, 1, 0);
 	}}
 >
 	<AudioListener />
