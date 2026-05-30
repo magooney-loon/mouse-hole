@@ -337,6 +337,7 @@
 				soundActions.playSwoosh();
 				if (groupRef) groupRef.visible = false;
 				if (lightRef) lightRef.intensity = 0.9;
+				if (circleRef) circleRef.visible = false;
 				hideBody();
 			}
 		}
