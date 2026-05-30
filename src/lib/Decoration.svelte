@@ -20,7 +20,7 @@
 	const PICKUP_RADIUS = 1.1; // start dragging when mouse this close
 	const CAPTURE_RADIUS = 0.45; // auto-deliver when body this close to spawn
 	const DRAG_SPEED = 7; // max push velocity m/s
-	const DRAG_MAX_DIST = 2.0; // auto-drop if decoration this far from mouse
+	const DRAG_MAX_DIST = 1.2; // auto-drop if decoration this far from mouse
 	const PUSH_DIST = 0.55; // how far in front of mouse to target
 	const IMPACT_THRESHOLD = 30; // contact force threshold to play sound
 	const IMPACT_COOLDOWN = 0.35; // seconds between impact sounds
