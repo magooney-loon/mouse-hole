@@ -2,7 +2,7 @@
 	/* import { T } from '@threlte/core';
 	import { Collider } from '@threlte/rapier'; */
 	import Mouse from '$lib/Mouse.svelte';
-	import CatAI from '$lib/CatAI.svelte';
+	/* import CatAI from '$lib/CatAI.svelte'; */
 	import Cheese from '$lib/Cheese.svelte';
 	import Decoration from '$lib/Decoration.svelte';
 	import SpawnPoint from '$lib/SpawnPoint.svelte';

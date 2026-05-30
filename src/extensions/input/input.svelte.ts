@@ -174,7 +174,8 @@ export const inputState = $state<InputState>({
 		connectedGamepads: [],
 		keyboardPressed: {},
 		mousePressed: { left: false, right: false, middle: false },
-		lastInputSource: null
+		lastInputSource: null,
+		touch: { moveX: 0, moveY: 0, actions: {} }
 	}
 });
 
@@ -199,8 +200,8 @@ const checkBindingActive = (binding: AnyBinding): boolean => {
 
 const isActionActive = (playerId: PlayerId, action: InputAction): boolean => {
 	const bindings = inputState.players[playerId]?.actions[action];
-	if (!bindings) return false;
-	return bindings.some(checkBindingActive);
+	const fromBindings = bindings ? bindings.some(checkBindingActive) : false;
+	return fromBindings || !!inputState.runtime.touch.actions[action];
 };
 
 export const inputQueries: InputQueries = {
@@ -213,19 +214,17 @@ export const inputQueries: InputQueries = {
 		return current && !prev;
 	},
 	getAxis(playerId, axisAction) {
-		// Analog gamepad axis — Phase 2 will write into runtime.gamepadAxes
-		// Fallback: derive from digital key bindings for moveX/moveY
 		if (axisAction === 'moveX') {
-			return (
+			const digital =
 				(isActionActive(playerId, 'moveRight') ? 1 : 0) -
-				(isActionActive(playerId, 'moveLeft') ? 1 : 0)
-			);
+				(isActionActive(playerId, 'moveLeft') ? 1 : 0);
+			return Math.max(-1, Math.min(1, digital + inputState.runtime.touch.moveX));
 		}
 		if (axisAction === 'moveY') {
-			return (
+			const digital =
 				(isActionActive(playerId, 'moveForward') ? 1 : 0) -
-				(isActionActive(playerId, 'moveBackward') ? 1 : 0)
-			);
+				(isActionActive(playerId, 'moveBackward') ? 1 : 0);
+			return Math.max(-1, Math.min(1, digital + inputState.runtime.touch.moveY));
 		}
 		return 0;
 	},

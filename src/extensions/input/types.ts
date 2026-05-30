@@ -104,6 +104,11 @@ export type InputRuntimeState = {
 	keyboardPressed: Record<string, boolean>;
 	mousePressed: Record<MouseButton, boolean>;
 	lastInputSource: 'keyboard' | 'mouse' | 'gamepad' | null;
+	touch: {
+		moveX: number;
+		moveY: number;
+		actions: Partial<Record<InputAction, boolean>>;
+	};
 };
 
 export type InputState = {

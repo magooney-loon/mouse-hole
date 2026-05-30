@@ -4,6 +4,7 @@
 	import { sceneActions } from '$extensions/scene/scene.svelte';
 	import { soundActions } from '$core/GlobalAudio.svelte';
 	import PlayerStats from '$lib/PlayerStats.svelte';
+	import TouchControls from '$lib/TouchControls.svelte';
 	import { gameState, gameActions } from '$lib/gameState.svelte';
 	import {
 		decorationState,
@@ -33,45 +34,45 @@
 </script>
 
 <div class="pointer-events-none absolute inset-0" transition:fly={{ y: 12, duration: 220 }}>
-	<!-- Stats — top left -->
-	<div class="absolute top-6 left-6">
-		<PlayerStats
-			hunger={Math.round(gameState.hunger)}
-			stamina={Math.round(gameState.stamina)}
-			sound={Math.round(gameState.sound)}
-		/>
-	</div>
+	<!-- Top bar: stats left, timer + decorations right — single row, no overlap -->
+	<div class="absolute top-3 left-3 right-3 flex items-start justify-between gap-2">
+		<div
+			class="bg-black/50 border border-white/15 rounded-xl px-2.5 py-2 backdrop-blur-sm shrink-0"
+			style="box-shadow: 2px 2px 0 #000;"
+		>
+			<PlayerStats
+				hunger={Math.round(gameState.hunger)}
+				stamina={Math.round(gameState.stamina)}
+				sound={Math.round(gameState.sound)}
+			/>
+		</div>
 
-	<div class="absolute top-6 right-6 flex items-stretch gap-2">
 		{#if gameState.status === 'playing' || gameState.status === 'game_over' || gameState.status === 'win'}
-			<div
-				class="bg-black/60 border-2 border-white/20 rounded-xl px-4 py-2 backdrop-blur-sm flex flex-col items-center gap-0.5"
-				style="box-shadow: 3px 3px 0 #000;"
-			>
-				<span class="text-white/40 font-black uppercase tracking-widest text-xs">Survived</span>
-				<span class="text-white font-black text-2xl tabular-nums leading-none">
-					{String(Math.floor(gameState.elapsed / 60)).padStart(2, '0')}:{String(
-						Math.floor(gameState.elapsed % 60)
-					).padStart(2, '0')}
-				</span>
-			</div>
-		{/if}
-
-		<!-- Decoration score -->
-		{#if gameState.status === 'playing' || gameState.status === 'game_over' || gameState.status === 'win'}
-			<div
-				class="bg-black/60 border-2 border-purple-400/40 rounded-xl px-4 py-2 backdrop-blur-sm flex flex-col items-center gap-1"
-				style="box-shadow: 3px 3px 0 #000;"
-			>
-				<span class="text-purple-300/60 font-black uppercase tracking-widest text-xs"
-					>Decorations</span
+			<div class="flex items-stretch gap-1.5 shrink-0">
+				<!-- Timer -->
+				<div
+					class="bg-black/60 border border-white/20 rounded-xl px-3 py-1.5 backdrop-blur-sm flex flex-col items-center justify-center gap-0"
+					style="box-shadow: 2px 2px 0 #000;"
 				>
-				<div class="flex items-center gap-1">
-					{#each { length: DECORATION_TOTAL } as _, i}
-						<span class="text-base"
-							>{decorationState.delivered[i] ? DECORATION_ICONS[i] : '⚪'}</span
-						>
-					{/each}
+					<span class="text-white/40 font-black uppercase tracking-widest" style="font-size:9px;">Time</span>
+					<span class="text-white font-black text-xl tabular-nums leading-none">
+						{String(Math.floor(gameState.elapsed / 60)).padStart(2, '0')}:{String(
+							Math.floor(gameState.elapsed % 60)
+						).padStart(2, '0')}
+					</span>
+				</div>
+
+				<!-- Decorations -->
+				<div
+					class="bg-black/60 border border-purple-400/40 rounded-xl px-3 py-1.5 backdrop-blur-sm flex flex-col items-center justify-center gap-0.5"
+					style="box-shadow: 2px 2px 0 #000;"
+				>
+					<span class="text-purple-300/60 font-black uppercase tracking-widest" style="font-size:9px;">Items</span>
+					<div class="flex items-center gap-0.5">
+						{#each { length: DECORATION_TOTAL } as _, i}
+							<span class="text-sm">{decorationState.delivered[i] ? DECORATION_ICONS[i] : '⚪'}</span>
+						{/each}
+					</div>
 				</div>
 			</div>
 		{/if}
@@ -95,6 +96,11 @@
 				>
 			</div>
 		</div>
+	{/if}
+
+	<!-- Touch controls — joystick + buttons, only on touch devices during gameplay -->
+	{#if gameState.status === 'playing'}
+		<TouchControls />
 	{/if}
 
 	<!-- Interact prompts — stacked above each other if multiple active -->
