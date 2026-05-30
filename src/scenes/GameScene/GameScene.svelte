@@ -52,7 +52,7 @@
 	let camInitialized = false;
 
 	// Heading angle (radians). 0 = nose pointing toward -Z.
-	let facingAngle = 0;
+	let facingAngle = 4.341;
 
 	const isGrounded = (): boolean => {
 		const t = mouseBody.translation();
@@ -200,7 +200,7 @@
 </T.Group>
 
 <!-- Mouse player -->
-<T.Group position={[0, 1, 0]}>
+<T.Group position={[1.936, 1, -1.894]}>
 	<RigidBody
 		type="dynamic"
 		lockRotations
@@ -212,7 +212,11 @@
 		<Collider shape="cuboid" args={[0.1, 0.1, 0.16]} />
 
 		<!-- Tracks the interpolated body transform for the camera to follow -->
-		<T.Object3D oncreate={(ref) => { mouseObj = ref; }} />
+		<T.Object3D
+			oncreate={(ref) => {
+				mouseObj = ref;
+			}}
+		/>
 
 		<!-- Body: rounded, elongated front-to-back (local -Z is forward) -->
 		<T.Mesh castShadow position={[0, 0, 0.03]} scale={[1, 0.85, 1.4]}>
