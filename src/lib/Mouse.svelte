@@ -113,10 +113,15 @@
 		const targetVZ = (fwdZ * move.y + rightZ * strafe) * speed;
 
 		const k = Math.min(1, delta * (grounded ? 16 : 5));
+
+		// Sync tracking velocity toward actual physics velocity (handles wall collisions)
+		const vel = mouseBody.linvel();
+		curVelX += (vel.x - curVelX) * Math.min(1, delta * 10);
+		curVelZ += (vel.z - curVelZ) * Math.min(1, delta * 10);
+
 		curVelX += (targetVX - curVelX) * k;
 		curVelZ += (targetVZ - curVelZ) * k;
 
-		const vel = mouseBody.linvel();
 		let velY = vel.y;
 		if (inputQueries.wasPressed('player1', 'jump') && grounded) {
 			velY = JUMP_VELOCITY;
