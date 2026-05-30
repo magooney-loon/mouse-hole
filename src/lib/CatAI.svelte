@@ -609,6 +609,11 @@
 			}
 		}
 
+		// Play alert sting once on the first frame the cat enters chase mode
+		if (prevMode !== 'chase' && catAIState.mode === 'chase') {
+			soundActions.playCatAlert();
+		}
+
 		// ── Movement target ───────────────────────────────────────────────────
 		let targetX = t.x;
 		let targetZ = t.z;

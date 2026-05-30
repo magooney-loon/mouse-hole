@@ -185,7 +185,7 @@
 			gameState.cheeseInRange = false;
 			wasInRange   = false;
 			spawnCrumbs();
-			soundActions.playClick();
+			soundActions.playMouseEating();
 		}
 	});
 </script>
