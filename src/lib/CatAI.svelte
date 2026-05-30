@@ -64,8 +64,8 @@
 	const GROUND_RAY_LEN = 0.12;
 
 	// Safe zone — cat loses interest when mouse is here (spawn / mouse hole)
-	const SAFE_ZONE_X      = 1.936;
-	const SAFE_ZONE_Z      = -1.894;
+	const SAFE_ZONE_X = 1.936;
+	const SAFE_ZONE_Z = -1.894;
 	const SAFE_ZONE_RADIUS = 1.1;
 
 	const mouseInSafeZone = (): boolean => {
@@ -75,6 +75,7 @@
 	};
 
 	const CAT_SIGHT_RANGE = 9;
+	const CONE_VISUAL_RANGE = 5; // rendered cone length (gameplay sight stays at CAT_SIGHT_RANGE)
 	const CAT_SIGHT_HALF_ANGLE = Math.PI / 4; // 90° total FOV
 	const CAT_HEAR_BASE = 2;
 	const CAT_HEAR_MAX = 10;
@@ -149,6 +150,17 @@
 		catAIState.alertLevel = 0;
 		catAIState.lastKnownPos = null;
 		catAIState.investigateTimer = 0;
+
+		// Reset cone smoothing state
+		coneSmoothX = 0;
+		coneSmoothY = 0;
+		coneSmoothZ = 0;
+		coneSmoothRotY = 0;
+		coneSmoothRotX = 0;
+		coneSmoothColorR = 0.55;
+		coneSmoothColorG = 0.95;
+		coneSmoothColorB = 0.65;
+		_smoothedSegDists.fill(CONE_VISUAL_RANGE);
 	}
 
 	onMount(resetLocalState);
@@ -169,6 +181,17 @@
 	const _conePositions = new Float32Array(_coneVertCount * 3);
 	const _coneDistances = new Float32Array(_coneVertCount);
 	const _segDists = new Float32Array(CONE_SEGMENTS + 1); // per-segment ray distances (reused across rings)
+	const _smoothedSegDists = new Float32Array(CONE_SEGMENTS + 1).fill(CONE_VISUAL_RANGE); // smoothed per-segment distances
+
+	// ── Smoothed cone transform state (prevents jitter on erratic movement) ─────
+	let coneSmoothX = 0;
+	let coneSmoothY = 0;
+	let coneSmoothZ = 0;
+	let coneSmoothRotY = 0;
+	let coneSmoothRotX = 0;
+	let coneSmoothColorR = 0.55;
+	let coneSmoothColorG = 0.95;
+	let coneSmoothColorB = 0.65;
 
 	// ── Vision cone refs (updated imperatively in the task) ──────────────────
 	let coneGroupRef: THREE.Group | null = null;
@@ -263,20 +286,40 @@
 		mouseHitRequest.z = _hitDir.z * KNOCKBACK_SPEED;
 	};
 
-	const updateVisionCone = (t: { x: number; y: number; z: number }) => {
+	const updateVisionCone = (t: { x: number; y: number; z: number }, delta: number) => {
 		if (!coneGroupRef || !coneGeoRef) return;
 
-		// Position cone at eye level, pushed forward from body center
-		const fwdX = -Math.sin(facingAngle) * CONE_FORWARD;
-		const fwdZ = -Math.cos(facingAngle) * CONE_FORWARD;
 		const now = performance.now() * 0.001;
 
-		coneGroupRef.position.set(t.x + fwdX, t.y + CONE_EYE_HEIGHT, t.z + fwdZ);
-		coneGroupRef.rotation.y = facingAngle;
-		// Scanning tilt — slow sinusoidal up/down
-		coneGroupRef.rotation.x = Math.sin(now * 0.8) * 0.18;
+		// ── Smoothed transform — lerp toward target to prevent jitter ──────────
+		const fwdX = -Math.sin(facingAngle) * CONE_FORWARD;
+		const fwdZ = -Math.cos(facingAngle) * CONE_FORWARD;
+		const targetX = t.x + fwdX;
+		const targetY = t.y + CONE_EYE_HEIGHT;
+		const targetZ = t.z + fwdZ;
 
-		const eyeY = t.y + CONE_EYE_HEIGHT;
+		// Position lerp (fast — stay close to the cat)
+		const posK = Math.min(1, delta * 20);
+		coneSmoothX += (targetX - coneSmoothX) * posK;
+		coneSmoothY += (targetY - coneSmoothY) * posK;
+		coneSmoothZ += (targetZ - coneSmoothZ) * posK;
+
+		coneGroupRef.position.set(coneSmoothX, coneSmoothY, coneSmoothZ);
+
+		// Y rotation lerp (shortest-path to avoid 360° spins)
+		let rotDiff = facingAngle - coneSmoothRotY;
+		if (rotDiff > Math.PI) rotDiff -= Math.PI * 2;
+		if (rotDiff < -Math.PI) rotDiff += Math.PI * 2;
+		const rotK = Math.min(1, delta * 16);
+		coneSmoothRotY += rotDiff * rotK;
+		coneGroupRef.rotation.y = coneSmoothRotY;
+
+		// Smooth scanning tilt
+		const targetTilt = Math.sin(now * 0.8) * 0.18;
+		coneSmoothRotX += (targetTilt - coneSmoothRotX) * Math.min(1, delta * 8);
+		coneGroupRef.rotation.x = coneSmoothRotX;
+
+		const eyeY = coneSmoothY;
 
 		// Apex vertex (index 0)
 		_conePositions[0] = 0;
@@ -285,16 +328,23 @@
 		_coneDistances[0] = 0;
 
 		// Step 1: cast horizontal rays to get per-segment distances
+		const rayAngle = coneSmoothRotY;
 		for (let s = 0; s <= CONE_SEGMENTS; s++) {
 			const hAngle = -CAT_SIGHT_HALF_ANGLE + (s / CONE_SEGMENTS) * CAT_SIGHT_HALF_ANGLE * 2;
-			const worldAngle = facingAngle + hAngle;
+			const worldAngle = rayAngle + hAngle;
 			_rayDir.set(-Math.sin(worldAngle), 0, -Math.cos(worldAngle));
 			const rayDist = firstRayHitDist(
-				{ x: t.x + fwdX, y: eyeY, z: t.z + fwdZ },
+				{ x: coneSmoothX, y: eyeY, z: coneSmoothZ },
 				{ x: _rayDir.x, y: _rayDir.y, z: _rayDir.z },
-				CAT_SIGHT_RANGE
+				CONE_VISUAL_RANGE
 			);
 			_segDists[s] = Math.max(0.05, rayDist - 0.04);
+		}
+
+		// Smooth per-segment distances to prevent shape popping
+		const distK = Math.min(1, delta * 18);
+		for (let s = 0; s <= CONE_SEGMENTS; s++) {
+			_smoothedSegDists[s] += (_segDists[s] - _smoothedSegDists[s]) * distK;
 		}
 
 		// Step 2: build 3D rings using the horizontal distances
@@ -305,13 +355,13 @@
 
 			for (let s = 0; s <= CONE_SEGMENTS; s++) {
 				const hAngle = -CAT_SIGHT_HALF_ANGLE + (s / CONE_SEGMENTS) * CAT_SIGHT_HALF_ANGLE * 2;
-				const dist = _segDists[s];
+				const dist = _smoothedSegDists[s];
 
 				const idx = 1 + r * (CONE_SEGMENTS + 1) + s;
 				_conePositions[idx * 3] = -Math.sin(hAngle) * dist * cosV;
 				_conePositions[idx * 3 + 1] = sinV * dist;
 				_conePositions[idx * 3 + 2] = -Math.cos(hAngle) * dist * cosV;
-				_coneDistances[idx] = dist / CAT_SIGHT_RANGE;
+				_coneDistances[idx] = dist / CONE_VISUAL_RANGE;
 			}
 		}
 
@@ -323,20 +373,27 @@
 
 		coneGeoRef.computeBoundingSphere();
 
-		if (catAIState.mode !== prevMode) {
-			prevMode = catAIState.mode;
-			const color =
-				catAIState.mode === 'chase'
-					? [1.0, 0.2, 0.2]
-					: catAIState.mode === 'search'
-						? [1.0, 0.67, 0.0]
-						: catAIState.mode === 'investigate'
-							? [1.0, 1.0, 0.0]
-							: [0.27, 1.0, 0.27];
-			coneMatRef?.uniforms.uColor.value.set(color[0], color[1], color[2]);
+		// ── Smooth color transitions on mode change ─────────────────────────────
+		const targetColor =
+			catAIState.mode === 'chase'
+				? [0.95, 0.35, 0.35]
+				: catAIState.mode === 'search'
+					? [0.95, 0.72, 0.4]
+					: catAIState.mode === 'investigate'
+						? [0.95, 0.9, 0.55]
+						: [0.55, 0.95, 0.65];
+
+		const colorK = Math.min(1, delta * 5);
+		coneSmoothColorR += (targetColor[0] - coneSmoothColorR) * colorK;
+		coneSmoothColorG += (targetColor[1] - coneSmoothColorG) * colorK;
+		coneSmoothColorB += (targetColor[2] - coneSmoothColorB) * colorK;
+
+		if (coneMatRef) {
+			coneMatRef.uniforms.uColor.value.set(coneSmoothColorR, coneSmoothColorG, coneSmoothColorB);
+			coneMatRef.uniforms.uTime.value = now;
 		}
 
-		if (coneMatRef) coneMatRef.uniforms.uTime.value = now;
+		prevMode = catAIState.mode;
 	};
 
 	const canHear = (): boolean => {
@@ -512,17 +569,17 @@
 
 		meowCooldown = Math.max(0, meowCooldown - delta);
 		catchCooldown = Math.max(0, catchCooldown - delta);
-		const safe  = mouseInSafeZone();
-		const sees  = !safe && canSee();
+		const safe = mouseInSafeZone();
+		const sees = !safe && canSee();
 		const hears = !safe && canHear();
 
 		// If mouse reached safe zone, cat gives up and wanders off
 		if (safe && (catAIState.mode === 'chase' || catAIState.mode === 'search')) {
-			catAIState.mode       = 'patrol';
+			catAIState.mode = 'patrol';
 			catAIState.alertLevel = 0;
 			catAIState.lastKnownPos = null;
-			noSightTimer  = 0;
-			searchTimer   = 0;
+			noSightTimer = 0;
+			searchTimer = 0;
 			roamTargetAngle = pickRoamDir(t);
 			roamTimer = ROAM_DIR_MIN_TIME;
 		}
@@ -800,7 +857,7 @@
 		// ── Animation speed ───────────────────────────────────────────────────
 		if (anim) anim.timeScale = catAIState.mode === 'chase' ? 1.5 : 1.0;
 
-		updateVisionCone(t);
+		updateVisionCone(t, delta);
 	});
 
 	// Build indices: apex → first ring, then ring-to-ring strips
@@ -831,7 +888,11 @@
 			catBody = rb;
 		}}
 	>
-		<Collider shape="cuboid" args={[0.22, 0.3, 0.6]} oncreate={(c) => c.setCollisionGroups(0xFFFE0002)} />
+		<Collider
+			shape="cuboid"
+			args={[0.22, 0.3, 0.6]}
+			oncreate={(c) => c.setCollisionGroups(0xfffe0002)}
+		/>
 
 		<!-- Debug: collider visualization (remove when done) -->
 		<T.Mesh>
@@ -877,12 +938,14 @@
 		<T.ShaderMaterial
 			transparent
 			depthWrite={false}
+			blendSrc={THREE.SrcAlphaFactor}
+			blendDst={THREE.OneMinusSrcAlphaFactor}
 			side={THREE.DoubleSide}
 			oncreate={(ref) => {
 				coneMatRef = ref;
 			}}
 			uniforms={{
-				uColor: { value: new THREE.Color(0.27, 1.0, 0.27) },
+				uColor: { value: new THREE.Color(0.55, 0.95, 0.65) },
 				uTime: { value: 0 }
 			}}
 			vertexShader={`
@@ -899,26 +962,26 @@
 				varying float vDist;
 
 				void main() {
-					// Radial fade: strong at center, transparent at edge
-					float alpha = (1.0 - vDist) * 0.35;
+					// Distance from cat: 0 = origin, 1 = tip
+					float d = clamp(vDist, 0.0, 1.0);
 
-					// Soft edge fade at the tip
-					alpha *= smoothstep(1.0, 0.85, vDist);
+					// Core fade — brightest in the middle zone, fades at origin and tip
+					float coreFade = smoothstep(0.0, 0.15, d) * smoothstep(1.0, 0.55, d);
 
-					// Subtle pulse
-					float pulse = 0.85 + 0.15 * sin(uTime * 2.0);
+					// Base alpha — subtle overall
+					float alpha = coreFade * 0.12;
+
+					// Soft tip falloff
+					alpha *= smoothstep(1.0, 0.6, d);
+
+					// Gentle pulse
+					float pulse = 0.9 + 0.1 * sin(uTime * 1.8 + d * 2.0);
 					alpha *= pulse;
 
-					// Scan line sweep
-					float scan = smoothstep(0.0, 0.06, abs(vDist - fract(uTime * 0.3)));
-					float scanBright = 1.0 - scan * 0.6;
-					alpha *= scanBright;
+					// Desaturate toward white at the far edges for a softer look
+					vec3 col = mix(vec3(1.0), uColor, 0.6 + 0.4 * coreFade);
 
-					// Center glow
-					float glow = exp(-vDist * 3.0) * 0.15;
-					alpha += glow;
-
-					gl_FragColor = vec4(uColor, alpha);
+					gl_FragColor = vec4(col, alpha);
 				}
 			`}
 		/>

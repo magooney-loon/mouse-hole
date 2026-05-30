@@ -25,6 +25,5 @@ export const BUNDLED_SCENE_PRESETS: Partial<Record<SceneType, ScenePresets>> = {
  *   3. Paste here and commit.
  */
 export const BUNDLED_GLOBAL_PRESETS: ScenePresets = {
-	// postprocessing: 'your-global-pp-preset-id',
-	// skybox: 'your-global-sky-preset-id',
+	postprocessing: '5cd47043-9178-4a45-9f56-296943c0cabc' // global
 };
