@@ -4,7 +4,7 @@
 	import { RigidBody, Collider, useRapier } from '@threlte/rapier';
 	import { useGltf, useGltfAnimations } from '@threlte/extras';
 	import { BASE_URL } from '$extensions/settings/settings.svelte';
-	import { catAIState, mouseHitRequest, mouseSharedPos } from '$lib/catAI.svelte';
+	import { catAIState, mouseHitRequest, mouseSharedPos, mouseBodyRef } from '$lib/catAI.svelte';
 	import { gameState } from '$lib/gameState.svelte';
 	import { soundActions } from '$core/globalAudio.svelte';
 	import * as THREE from 'three';
@@ -42,8 +42,7 @@
 	const CAT_WALK_SPEED = 1.8;
 	const CAT_SEARCH_SPEED = 2.4;
 	const CAT_CHASE_SPEED = 3.8;
-	const CAT_JUMP_VEL = 4.5;
-	const GROUND_RAY_LEN = 0.28;
+	const GROUND_RAY_LEN = 0.12;
 
 	const CAT_SIGHT_RANGE = 9;
 	const CAT_SIGHT_HALF_ANGLE = Math.PI / 4; // 90° total FOV
@@ -55,8 +54,8 @@
 	const ARRIVE_DIST = 1.0;
 	const CATCH_DIST = 0.78;
 	const CATCH_COOLDOWN = 0.9;
-	const KNOCKBACK_SPEED = 5.5;
-	const KNOCKBACK_UP = 2.7;
+	const KNOCKBACK_SPEED = 3.5;
+	const KNOCKBACK_UP = 1.8;
 	const INVESTIGATE_DUR = 3.5;
 	const SEARCH_TIMEOUT = 10;
 	const SIGHT_LOSS_TIMEOUT = 1.5;
@@ -142,7 +141,8 @@
 	// ── Perception ────────────────────────────────────────────────────────────
 	const isGrounded = (): boolean => {
 		const t = catBody.translation();
-		const ray = new rapier.Ray({ x: t.x, y: t.y, z: t.z }, { x: 0, y: -1, z: 0 });
+		// Cast from the bottom of the cat's collider (y - halfHeight)
+		const ray = new rapier.Ray({ x: t.x, y: t.y - 0.48, z: t.z }, { x: 0, y: -1, z: 0 });
 		return !!world.castRay(ray, GROUND_RAY_LEN, true, undefined, undefined, undefined, catBody);
 	};
 
@@ -154,6 +154,24 @@
 		const ray = new rapier.Ray(origin, dir);
 		const hit = world.castRay(ray, maxDist, true, undefined, undefined, undefined, catBody);
 		return hit ? hit.timeOfImpact : maxDist;
+	};
+
+	// Returns true if the ray from cat reaches the mouse without hitting a wall.
+	// Excludes cat body, then checks if the first hit belongs to the mouse body.
+	const hasClearLOS = (
+		origin: { x: number; y: number; z: number },
+		dir: { x: number; y: number; z: number },
+		maxDist: number
+	): boolean => {
+		const ray = new rapier.Ray(origin, dir);
+		const hit = world.castRay(ray, maxDist, true, undefined, undefined, undefined, catBody);
+		if (!hit) return false;
+		// Check if the hit collider belongs to the mouse body
+		const hitBody = hit.collider.parent();
+		if (hitBody && mouseBodyRef.current && hitBody.handle === mouseBodyRef.current.handle)
+			return true;
+		// Hit something that isn't the mouse → wall in the way
+		return false;
 	};
 
 	// Horizontal ray at cat's eye height — used for wall avoidance probes
@@ -171,8 +189,7 @@
 	const hasLOS = (dist: number): boolean => {
 		const dir = _toMouse.normalize();
 		const t = catBody.translation();
-		const wallD = firstRayHitDist({ x: t.x, y: t.y + CONE_EYE_HEIGHT, z: t.z }, dir, dist);
-		return wallD >= dist - 0.12;
+		return hasClearLOS({ x: t.x, y: t.y + CONE_EYE_HEIGHT, z: t.z }, dir, dist);
 	};
 
 	const canSee = (): boolean => {
@@ -649,33 +666,7 @@
 		curVelX += (desiredVX - curVelX) * k;
 		curVelZ += (desiredVZ - curVelZ) * k;
 
-		let velY = vel.y;
-
-		// Jump only if still stuck after escape maneuvers (last resort)
-		// or if the escape direction requires jumping over something
-		if (stuckTimer > STUCK_TIME && grounded && !escaping) {
-			velY = CAT_JUMP_VEL;
-			stuckTimer = 0;
-		}
-		// Also jump during escape if forward probe shows a wall we can vault
-		if (escaping && grounded) {
-			const fwdX = -Math.sin(facingAngle);
-			const fwdZ = -Math.cos(facingAngle);
-			const eyeY = t.y + CONE_EYE_HEIGHT;
-			const fwdWall = wallDist(t.x, eyeY, t.z, fwdX, fwdZ, 0.6);
-			if (fwdWall < 0.4) {
-				// Check if there's ground ahead on the other side of the wall
-				const landX = t.x + fwdX * 1.2;
-				const landZ = t.z + fwdZ * 1.2;
-				const downRay = new rapier.Ray({ x: landX, y: t.y + 1.5, z: landZ }, { x: 0, y: -1, z: 0 });
-				const groundHit = world.castRay(downRay, 3, true, undefined, undefined, undefined, catBody);
-				if (groundHit && groundHit.timeOfImpact < 2.5) {
-					velY = CAT_JUMP_VEL;
-				}
-			}
-		}
-
-		catBody.setLinvel({ x: curVelX, y: velY, z: curVelZ }, true);
+		catBody.setLinvel({ x: curVelX, y: vel.y, z: curVelZ }, true);
 		catBody.setAngvel({ x: 0, y: 0, z: 0 }, true);
 
 		const half = facingAngle / 2;
@@ -695,14 +686,22 @@
 		type="dynamic"
 		lockRotations
 		canSleep={false}
+		ccd
+		linearDamping={0.5}
 		oncreate={(rb) => {
 			catBody = rb;
 		}}
 	>
-		<Collider shape="cuboid" args={[0.22, 0.24, 0.28]} />
+		<Collider shape="cuboid" args={[0.36, 0.48, 0.6]} />
+
+		<!-- Debug: collider visualization (remove when done) -->
+		<T.Mesh>
+			<T.BoxGeometry args={[0.72, 0.96, 1.2]} />
+			<T.MeshBasicMaterial color={0xff0000} wireframe transparent opacity={0.5} />
+		</T.Mesh>
 
 		{#if $gltf}
-			<T.Group scale={0.02} rotation={[0, Math.PI, 0]}>
+			<T.Group scale={0.02} position={[0, -0.4, 0]} rotation={[0, Math.PI, 0]}>
 				<T is={$gltf.scene} />
 			</T.Group>
 		{/if}

@@ -10,7 +10,7 @@
 	<Collider shape="cuboid" args={[50, 0.01, 50]} />
 	<T.Mesh receiveShadow>
 		<T.BoxGeometry args={[100, 0.2, 100]} />
-		<T.MeshStandardMaterial color="#8B6914" transparent opacity={0.3} />
+		<T.MeshStandardMaterial color="#8B6914" transparent opacity={0.01} />
 	</T.Mesh>
 </T.Group>
 <Mouse />

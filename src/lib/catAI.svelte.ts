@@ -4,7 +4,7 @@ export const catAIState = $state({
 	mode: 'patrol' as CatAIMode,
 	alertLevel: 0,
 	lastKnownPos: null as { x: number; y: number; z: number } | null,
-	investigateTimer: 0,
+	investigateTimer: 0
 });
 
 // Written by Mouse.svelte every frame — plain object, no reactivity overhead
@@ -16,3 +16,6 @@ export const mouseHitRequest = {
 	y: 0,
 	z: 0
 };
+
+// Set by Mouse.svelte on create — used by CatAI to exclude mouse body from raycasts
+export const mouseBodyRef: { current: any } = { current: null };

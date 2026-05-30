@@ -4,7 +4,7 @@
 	import { RigidBody, Collider, useRapier } from '@threlte/rapier';
 	import { inputQueries, advanceInputFrame } from '$extensions/input/input.svelte';
 	import { tickGameState, gameState } from '$lib/gameState.svelte';
-	import { mouseHitRequest, mouseSharedPos } from '$lib/catAI.svelte';
+	import { mouseHitRequest, mouseSharedPos, mouseBodyRef } from '$lib/catAI.svelte';
 	import { soundActions } from '$core/globalAudio.svelte';
 	import * as THREE from 'three';
 
@@ -68,7 +68,15 @@
 	const isGrounded = (): boolean => {
 		const t = mouseBody.translation();
 		const ray = new rapier.Ray({ x: t.x, y: t.y, z: t.z }, { x: 0, y: -1, z: 0 });
-		const hit = world.castRay(ray, GROUND_RAY_LEN, true, undefined, undefined, undefined, mouseBody);
+		const hit = world.castRay(
+			ray,
+			GROUND_RAY_LEN,
+			true,
+			undefined,
+			undefined,
+			undefined,
+			mouseBody
+		);
 		return !!hit;
 	};
 
@@ -166,7 +174,9 @@
 		const moving = Math.abs(move.x) > 0.1 || Math.abs(move.y) > 0.1;
 		tickGameState(delta, sprinting, moving, !grounded);
 
-		soundActions.setWalkState(!grounded || !moving ? 'stopped' : sprinting ? 'sprinting' : 'walking');
+		soundActions.setWalkState(
+			!grounded || !moving ? 'stopped' : sprinting ? 'sprinting' : 'walking'
+		);
 
 		advanceInputFrame();
 	});
@@ -178,7 +188,9 @@
 	fov={60}
 	near={0.001}
 	far={144}
-	oncreate={(ref) => { gameCam = ref; }}
+	oncreate={(ref) => {
+		gameCam = ref;
+	}}
 />
 
 <T.Group position={[1.936, 1, -1.894]}>
@@ -186,11 +198,19 @@
 		type="dynamic"
 		lockRotations
 		canSleep={false}
-		oncreate={(rb) => { mouseBody = rb; }}
+		ccd
+		oncreate={(rb) => {
+			mouseBody = rb;
+			mouseBodyRef.current = rb;
+		}}
 	>
 		<Collider shape="cuboid" args={[0.1, 0.1, 0.16]} />
 
-		<T.Object3D oncreate={(ref) => { mouseObj = ref; }} />
+		<T.Object3D
+			oncreate={(ref) => {
+				mouseObj = ref;
+			}}
+		/>
 
 		<!-- Body -->
 		<T.Mesh castShadow position={[0, 0, 0.03]} scale={[1, 0.85, 1.4]}>
