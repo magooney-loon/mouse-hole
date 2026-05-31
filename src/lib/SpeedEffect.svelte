@@ -27,6 +27,7 @@
 				);
 				animation: speed-spin {sprintSpring.current * 0.8}s linear infinite;
 				mix-blend-mode: screen;
+				mask-image: radial-gradient(ellipse at center, transparent 22%, black 46%);
 			"
 		></div>
 
