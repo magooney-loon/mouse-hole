@@ -1,4 +1,5 @@
 import { gameActions } from '$lib/gameState.svelte';
+import { wavedashActions } from '$extensions/wavedash/wavedash.svelte';
 
 export const DECORATION_TOTAL = 5;
 
@@ -37,6 +38,7 @@ export const decorationActions = {
 		decorationState.delivered[index] = true;
 		decorationState.deliveredCount++;
 		decorationState.deliverInRange = false;
+		wavedashActions.onDecorationDelivered(index);
 		if (decorationState.deliveredCount >= DECORATION_TOTAL) {
 			gameActions.win();
 		}

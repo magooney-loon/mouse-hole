@@ -17,12 +17,49 @@ export type LeaderboardEntry = {
 	score: number;
 };
 
+export type AchievementNotif = {
+	id: string;
+	title: string;
+	icon: string;
+};
+
+const ACHIEVEMENT_META: Record<string, { title: string; icon: string }> = {
+	fork:      { title: 'Fork Collector',  icon: '🍴' },
+	matchstick:{ title: 'Fire Starter',    icon: '🔥' },
+	lighter:   { title: 'Light It Up',     icon: '🔥' },
+	phone:     { title: 'Pocket Sized',    icon: '📱' },
+	thimble:   { title: 'Thimble Finder',  icon: '🧵' },
+	winner:    { title: 'Home Sweet Home', icon: '🏆' }
+};
+
 export const leaderboardState = $state({
 	topItems: [] as LeaderboardEntry[],
 	myEntry: null as LeaderboardEntry | null,
 	loading: false,
 	ready: false
 });
+
+export const achievementNotifState = $state({
+	current: null as AchievementNotif | null
+});
+
+const notifQueue: AchievementNotif[] = [];
+let notifTimer: ReturnType<typeof setTimeout> | null = null;
+
+function queueNotif(notif: AchievementNotif) {
+	notifQueue.push(notif);
+	if (!notifTimer) showNextNotif();
+}
+
+function showNextNotif() {
+	if (notifQueue.length === 0) { notifTimer = null; return; }
+	achievementNotifState.current = notifQueue.shift()!;
+	notifTimer = setTimeout(() => {
+		achievementNotifState.current = null;
+		notifTimer = null;
+		showNextNotif();
+	}, 3500);
+}
 
 const resolveSDK = async (): Promise<WavedashSDK | null> => {
 	if (sdk) return sdk;
@@ -87,6 +124,29 @@ export const wavedashActions = {
 		} finally {
 			leaderboardState.loading = false;
 		}
+	},
+
+	onDecorationDelivered(index: number) {
+		const ACHIEVEMENT_IDS = ['fork', 'matchstick', 'lighter', 'phone', 'thimble'];
+		const id = ACHIEVEMENT_IDS[index];
+		if (!id) return;
+		const meta = ACHIEVEMENT_META[id];
+		queueNotif({ id, ...meta });
+		resolveSDK().then((s) => {
+			if (!s) return;
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			(s as any).setAchievement(id, true);
+		});
+	},
+
+	onGameWin() {
+		const meta = ACHIEVEMENT_META['winner'];
+		queueNotif({ id: 'winner', ...meta });
+		resolveSDK().then((s) => {
+			if (!s) return;
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			(s as any).setAchievement('winner', true);
+		});
 	},
 
 	// avgTimeMs only passed on a full win — speedrun board only tracks complete runs
