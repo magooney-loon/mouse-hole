@@ -57,7 +57,6 @@
 	let itemY = p[1];
 	let itemZ = p[2];
 
-	let lightRef: THREE.PointLight | null = null;
 	let groupRef: THREE.Group | null = null;
 	let circleRef: THREE.Mesh | null = null;
 
@@ -75,7 +74,6 @@
 		stuckTimer = 0;
 		decorationActions.drop();
 		settleToFloor();
-		if (lightRef) lightRef.intensity = 0.9;
 		if (decorationState.deliverInRange) decorationState.deliverInRange = false;
 	};
 
@@ -326,9 +324,6 @@
 				return;
 			}
 
-			// Glow pulse while dragging
-			if (lightRef) lightRef.intensity = 1.5 + Math.sin(bobT * 5) * 0.8;
-
 			// Auto-capture at spawn
 			const sx = sp[0] - itemX;
 			const sy = sp[1] - itemY;
@@ -345,7 +340,6 @@
 				spawnSparks(itemX, itemY, itemZ);
 				soundActions.playSwoosh();
 				if (groupRef) groupRef.visible = false;
-				if (lightRef) lightRef.intensity = 0.9;
 				if (circleRef) circleRef.visible = false;
 			}
 		}
@@ -380,16 +374,6 @@
 	}}
 >
 	<DecorationShape index={idx} />
-	<T.PointLight
-		color="#d946ef"
-		intensity={0.9}
-		distance={1.5}
-		decay={2}
-		position={[0, 0.1, 0]}
-		oncreate={(ref) => {
-			lightRef = ref;
-		}}
-	/>
 </T.Group>
 
 <T.Group

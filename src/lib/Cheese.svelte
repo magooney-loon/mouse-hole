@@ -302,7 +302,6 @@
 			<T.MeshStandardMaterial color="#c8900a" flatShading side={THREE.BackSide} />
 		</T.Mesh>
 
-		<T.PointLight color="#ffe066" intensity={0.6} distance={1.2} decay={2} position={[0, 0.2, 0]} />
 	</T.Group>
 </T.Group>
 
