@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { T, useTask } from '@threlte/core';
 	import { useRapier } from '@threlte/rapier';
-	import { onDestroy } from 'svelte';
+	import { onDestroy, untrack } from 'svelte';
 	import * as THREE from 'three';
 	import { inputQueries } from '$extensions/input/input.svelte';
 	import { gameState } from '$lib/gameState.svelte';
@@ -16,6 +16,11 @@
 		index: number;
 	}
 	let { position, spawnPosition, index }: Props = $props();
+
+	// Props are fixed per-instance — snapshot to avoid state_referenced_locally warnings
+	const p = untrack(() => [...position] as [number, number, number]);
+	const sp = untrack(() => [...spawnPosition] as [number, number, number]);
+	const idx = untrack(() => index);
 
 	const { world, rapier } = useRapier();
 
@@ -48,9 +53,9 @@
 	let prevItemZ = 0;
 
 	// Item world position — driven directly, no rigid body
-	let itemX = position[0];
-	let itemY = position[1];
-	let itemZ = position[2];
+	let itemX = p[0];
+	let itemY = p[1];
+	let itemZ = p[2];
 
 	let lightRef: THREE.PointLight | null = null;
 	let groupRef: THREE.Group | null = null;
@@ -141,9 +146,9 @@
 			prevInteract = false;
 			pickupCooldown = 0;
 			stuckTimer = 0;
-			itemX = position[0];
-			itemY = position[1];
-			itemZ = position[2];
+			itemX = p[0];
+			itemY = p[1];
+			itemZ = p[2];
 			settleToFloor();
 			decorationActions.reset();
 			if (groupRef) {
@@ -233,7 +238,7 @@
 				pickupCooldown = 0.35;
 				prevItemX = itemX;
 				prevItemZ = itemZ;
-				decorationActions.pickup(index);
+				decorationActions.pickup(idx);
 				spawnSparks(itemX, itemY, itemZ);
 				soundActions.playMouseEating();
 			}
@@ -325,9 +330,9 @@
 			if (lightRef) lightRef.intensity = 1.5 + Math.sin(bobT * 5) * 0.8;
 
 			// Auto-capture at spawn
-			const sx = spawnPosition[0] - itemX;
-			const sy = spawnPosition[1] - itemY;
-			const sz = spawnPosition[2] - itemZ;
+			const sx = sp[0] - itemX;
+			const sy = sp[1] - itemY;
+			const sz = sp[2] - itemZ;
 			const distToSpawn = Math.sqrt(sx * sx + sy * sy + sz * sz);
 			const nearSpawn = distToSpawn < CAPTURE_RADIUS;
 
@@ -336,7 +341,7 @@
 			if (nearSpawn) {
 				isDragging = false;
 				delivered = true;
-				decorationActions.deliver(index);
+				decorationActions.deliver(idx);
 				spawnSparks(itemX, itemY, itemZ);
 				soundActions.playSwoosh();
 				if (groupRef) groupRef.visible = false;
@@ -352,7 +357,7 @@
 	rotation={[-Math.PI / 2, 0, 0]}
 	oncreate={(ref) => {
 		circleRef = ref;
-		ref.position.set(position[0], 0.005, position[2]);
+		ref.position.set(p[0], 0.005, p[2]);
 	}}
 >
 	<T.CircleGeometry args={[0.09, 20]} />
@@ -370,11 +375,11 @@
 <T.Group
 	oncreate={(ref) => {
 		groupRef = ref;
-		ref.position.set(position[0], position[1], position[2]);
+		ref.position.set(p[0], p[1], p[2]);
 		ref.scale.setScalar(0);
 	}}
 >
-	<DecorationShape {index} />
+	<DecorationShape index={idx} />
 	<T.PointLight
 		color="#d946ef"
 		intensity={0.9}
