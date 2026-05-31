@@ -2,6 +2,8 @@
 
 # 🐭 Mouse Hole
 
+<img src="public/textures/cover.jpg" alt="Mouse Hole" width="400" />
+
 *A game built for [Wavedash](https://wavedash.com/) Spring Jam 26*
 
 **Theme: Shelter**
