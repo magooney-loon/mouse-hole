@@ -16,18 +16,22 @@
 	                 hover:translate-x-[2px] hover:translate-y-[2px]
 	                 active:translate-x-[4px] active:translate-y-[4px]`;
 
-	function formatScore(score: number): string {
-		return `${score} item${score !== 1 ? 's' : ''}`;
-	}
-
 	function formatAvgTime(ms: number): string {
 		return `${(ms / 1000).toFixed(1)}s / item`;
 	}
+
+	const top5 = $derived(leaderboardState.speedrunTop.slice(0, 5));
+	const myEntryOutside = $derived(
+		leaderboardState.speedrunMyEntry &&
+			!top5.some((e) => e.globalRank === leaderboardState.speedrunMyEntry?.globalRank)
+			? leaderboardState.speedrunMyEntry
+			: null
+	);
 </script>
 
 <div class="pointer-events-auto absolute inset-0 flex items-center justify-center">
 	<div
-		class="relative flex flex-col gap-4 w-full max-w-xl mx-4 px-6 py-6
+		class="relative flex flex-col gap-5 w-full max-w-xl mx-4 px-6 py-6
 		       bg-black/50 border-4 border-black rounded-2xl backdrop-blur-md"
 		style="box-shadow: 7px 7px 0 #000;"
 	>
@@ -42,17 +46,16 @@
 					Scoreboard
 				</h2>
 			</div>
-			<span class="text-white/40 text-xs font-black uppercase tracking-widest">Items Collected</span
-			>
+			<span class="text-white/40 text-xs font-black uppercase tracking-widest">Best Avg Time</span>
 		</div>
 
-		<!-- Score rows -->
-		<div class="flex flex-col gap-1.5 min-h-50">
+		<!-- Rows -->
+		<div class="flex flex-col gap-2 min-h-64">
 			{#if leaderboardState.loading}
 				<div class="flex-1 flex items-center justify-center text-white/40 font-black text-sm py-10">
 					Loading...
 				</div>
-			{:else if leaderboardState.topItems.length === 0}
+			{:else if top5.length === 0}
 				<div
 					class="flex-1 flex flex-col items-center justify-center gap-2 text-white/30 font-black py-10"
 				>
@@ -60,14 +63,14 @@
 					<span class="text-sm">No scores yet. Be the first!</span>
 				</div>
 			{:else}
-				{#each leaderboardState.topItems as entry, i}
-					{@const isMe = leaderboardState.myEntry?.globalRank === entry.globalRank}
+				{#each top5 as entry, i}
+					{@const isMe = leaderboardState.speedrunMyEntry?.globalRank === entry.globalRank}
 					<div
-						class="flex items-center gap-3 px-3 py-2 rounded-lg border
+						class="flex items-center gap-4 px-4 py-3 rounded-xl border
 						       {isMe ? 'bg-amber-400/15 border-amber-400/50' : 'bg-white/5 border-white/5'}"
 					>
 						<span
-							class="w-7 shrink-0 text-center font-black text-sm tabular-nums
+							class="w-8 shrink-0 text-center font-black text-base tabular-nums
 							       {i === 0
 								? 'text-amber-300'
 								: i === 1
@@ -79,86 +82,39 @@
 							#{entry.globalRank}
 						</span>
 						<span
-							class="flex-1 font-black text-sm truncate {isMe ? 'text-amber-300' : 'text-white/80'}"
+							class="flex-1 font-black text-base truncate {isMe ? 'text-amber-300' : 'text-white/80'}"
 						>
 							{entry.username}{isMe ? ' (you)' : ''}
 						</span>
 						<span
-							class="font-black text-sm tabular-nums shrink-0 {isMe
+							class="font-black text-base tabular-nums shrink-0 {isMe
 								? 'text-amber-300'
 								: 'text-white/50'}"
 						>
-							{formatScore(entry.score)}
+							{formatAvgTime(entry.score)}
 						</span>
 					</div>
 				{/each}
 
-				<!-- Player rank if outside top 10 -->
-				{#if leaderboardState.myEntry && !leaderboardState.topItems.some((e) => e.globalRank === leaderboardState.myEntry?.globalRank)}
+				{#if myEntryOutside}
 					<div class="mt-1 border-t-2 border-white/10 pt-2">
 						<div
-							class="flex items-center gap-3 px-3 py-2 rounded-lg bg-amber-400/15 border border-amber-400/50"
+							class="flex items-center gap-4 px-4 py-3 rounded-xl bg-amber-400/15 border border-amber-400/50"
 						>
-							<span class="w-7 shrink-0 text-center font-black text-sm text-amber-300 tabular-nums">
-								#{leaderboardState.myEntry.globalRank}
+							<span class="w-8 shrink-0 text-center font-black text-base text-amber-300 tabular-nums">
+								#{myEntryOutside.globalRank}
 							</span>
-							<span class="flex-1 font-black text-sm text-amber-300 truncate">
-								{leaderboardState.myEntry.username} (you)
+							<span class="flex-1 font-black text-base text-amber-300 truncate">
+								{myEntryOutside.username} (you)
 							</span>
-							<span class="font-black text-sm text-amber-300 tabular-nums shrink-0">
-								{formatScore(leaderboardState.myEntry.score)}
+							<span class="font-black text-base text-amber-300 tabular-nums shrink-0">
+								{formatAvgTime(myEntryOutside.score)}
 							</span>
 						</div>
 					</div>
 				{/if}
 			{/if}
 		</div>
-
-		<!-- Speedrun board -->
-		{#if leaderboardState.speedrunTop.length > 0}
-			<div class="border-t-2 border-white/10 pt-3 flex flex-col gap-1.5">
-				<div class="flex items-center justify-between">
-					<span class="text-white/50 text-xs font-black uppercase tracking-widest">⚡ Best Avg Time</span>
-					<span class="text-white/30 text-xs font-black uppercase tracking-widest">per item</span>
-				</div>
-				{#each leaderboardState.speedrunTop as entry, i}
-					{@const isMe = leaderboardState.speedrunMyEntry?.globalRank === entry.globalRank}
-					<div
-						class="flex items-center gap-3 px-3 py-1.5 rounded-lg border
-						       {isMe ? 'bg-amber-400/15 border-amber-400/50' : 'bg-white/5 border-white/5'}"
-					>
-						<span
-							class="w-7 shrink-0 text-center font-black text-xs tabular-nums
-							       {i === 0 ? 'text-amber-300' : i === 1 ? 'text-white/60' : i === 2 ? 'text-amber-600' : 'text-white/25'}"
-						>
-							#{entry.globalRank}
-						</span>
-						<span class="flex-1 font-black text-xs truncate {isMe ? 'text-amber-300' : 'text-white/70'}">
-							{entry.username}{isMe ? ' (you)' : ''}
-						</span>
-						<span class="font-black text-xs tabular-nums shrink-0 {isMe ? 'text-amber-300' : 'text-white/50'}">
-							{formatAvgTime(entry.score)}
-						</span>
-					</div>
-				{/each}
-
-				{#if leaderboardState.speedrunMyEntry && !leaderboardState.speedrunTop.some((e) => e.globalRank === leaderboardState.speedrunMyEntry?.globalRank)}
-					<div class="mt-1 border-t border-white/10 pt-1.5">
-						<div class="flex items-center gap-3 px-3 py-1.5 rounded-lg bg-amber-400/15 border border-amber-400/50">
-							<span class="w-7 shrink-0 text-center font-black text-xs text-amber-300 tabular-nums">
-								#{leaderboardState.speedrunMyEntry.globalRank}
-							</span>
-							<span class="flex-1 font-black text-xs text-amber-300 truncate">
-								{leaderboardState.speedrunMyEntry.username} (you)
-							</span>
-							<span class="font-black text-xs text-amber-300 tabular-nums shrink-0">
-								{formatAvgTime(leaderboardState.speedrunMyEntry.score)}
-							</span>
-						</div>
-					</div>
-				{/if}
-			</div>
-		{/if}
 
 		<!-- Back button -->
 		<button
