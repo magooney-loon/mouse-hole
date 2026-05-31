@@ -19,7 +19,7 @@ A mouse hole is shelter — small, warm, and hidden from what's outside.
 - **Host:** [Wavedash](https://wavedash.com/)
 - **Theme:** Shelter
 - **Duration:** May 29–31, 2026
-- **Play it:** *link coming soon*
+- **Play it:** [*MouseHole*](https://wavedash.com/games/mouse-hole)
 
 ---
 
