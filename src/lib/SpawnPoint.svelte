@@ -10,7 +10,6 @@
 	let { position }: Props = $props();
 
 	let outerRingRef: THREE.Mesh | null = null;
-	let glowMatRef: THREE.MeshStandardMaterial | null = null;
 	let outerMatRef: THREE.MeshStandardMaterial | null = null;
 	let houseGroupRef: THREE.Group | null = null;
 	let slotRefs: (THREE.Group | null)[] = [];
@@ -47,11 +46,6 @@
 
 		// Colour: idle amber → active green
 		_col.lerpColors(COL_IDLE, COL_ACTIVE, active ? 0.9 : 0);
-		if (glowMatRef) {
-			glowMatRef.color.copy(_col);
-			glowMatRef.emissive.copy(_col);
-			glowMatRef.emissiveIntensity = 0.15 + (Math.sin(pulseT * 1.6) * 0.5 + 0.5) * 0.25;
-		}
 		if (outerMatRef) {
 			outerMatRef.color.copy(_col);
 			outerMatRef.emissive.copy(_col);
@@ -60,32 +54,10 @@
 </script>
 
 <T.Group position={[position[0], position[1], position[2]]}>
-	<!-- Base glow disc -->
-	<T.Mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.002, 0]}>
-		<T.CircleGeometry args={[0.3, 48]} />
-		<T.MeshStandardMaterial
-			color="#f59e0b"
-			emissive="#f59e0b"
-			emissiveIntensity={0.2}
-			transparent
-			opacity={0.55}
-			depthWrite={false}
-			oncreate={(ref) => {
-				glowMatRef = ref;
-			}}
-		/>
-	</T.Mesh>
-
-	<!-- Static border ring -->
-	<T.Mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.003, 0]}>
-		<T.RingGeometry args={[0.28, 0.32, 48]} />
-		<T.MeshStandardMaterial color="#f59e0b" emissive="#f59e0b" emissiveIntensity={0.6} />
-	</T.Mesh>
-
 	<!-- Animated pulse ring -->
 	<T.Mesh
 		rotation={[-Math.PI / 2, 0, 0]}
-		position={[0, 0.004, 0]}
+		position={[0, 0.09, 0]}
 		oncreate={(ref) => {
 			outerRingRef = ref;
 		}}

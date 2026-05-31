@@ -21,9 +21,9 @@
 				background: repeating-conic-gradient(
 					from 0deg,
 					transparent 0deg,
-					transparent 8deg,
-					rgba(255,255,255,0.06) 8deg,
-					rgba(255,255,255,0.06) 10deg
+					transparent 22deg,
+					rgba(255,255,255,0.09) 22deg,
+					rgba(255,255,255,0.09) 28deg
 				);
 				animation: speed-spin {sprintSpring.current * 0.8}s linear infinite;
 				mix-blend-mode: screen;
