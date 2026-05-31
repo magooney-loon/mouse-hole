@@ -19,6 +19,9 @@
 
 	const { world, rapier } = useRapier();
 
+	// Pre-allocated ray — avoids 3 object allocations per frame during drag
+	const _wallRay = new rapier.Ray({ x: 0, y: 0, z: 0 }, { x: 1, y: 0, z: 0 });
+
 	const PICKUP_RADIUS = 1.1; // start dragging when mouse this close
 	const CAPTURE_RADIUS = 0.45; // auto-deliver when body this close to spawn
 	const DRAG_SPEED = 7; // max push velocity m/s
@@ -211,9 +214,9 @@
 			groupRef.scale.setScalar(Math.max(0, s));
 		}
 
+		bobT += delta;
 		// Bob + spin while idle (not dragging, fully appeared)
 		if (!isDragging && appearT >= 1) {
-			bobT += delta;
 			groupRef.position.y = pos.y + 0.04 + Math.sin(bobT * 2.2) * 0.022;
 			groupRef.rotation.y = bobT * 0.75;
 		}
@@ -277,12 +280,14 @@
 				const nz = dz * inv;
 
 				// Anti-tunnel: raycast from ball toward target to detect walls.
-				const wallRay = new rapier.Ray(
-					{ x: pos.x, y: pos.y + 0.05, z: pos.z },
-					{ x: nx, y: 0, z: nz }
-				);
+				_wallRay.origin.x = pos.x;
+				_wallRay.origin.y = pos.y + 0.05;
+				_wallRay.origin.z = pos.z;
+				_wallRay.dir.x = nx;
+				_wallRay.dir.y = 0;
+				_wallRay.dir.z = nz;
 				const wallHit = world.castRay(
-					wallRay,
+					_wallRay,
 					dist,
 					false,
 					undefined,
@@ -346,7 +351,7 @@
 			}
 
 			// Glow pulse while dragging
-			if (lightRef) lightRef.intensity = 1.5 + Math.sin(Date.now() * 0.005) * 0.8;
+			if (lightRef) lightRef.intensity = 1.5 + Math.sin(bobT * 5) * 0.8;
 
 			// Auto-capture at spawn (check body position, not mouse)
 			const sx = spawnPosition[0] - pos.x;

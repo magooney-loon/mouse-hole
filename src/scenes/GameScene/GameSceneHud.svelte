@@ -13,8 +13,7 @@
 		DECORATION_ICONS,
 		DECORATION_TOTAL
 	} from '$lib/decorationState.svelte';
-	import { wavedashActions, achievementNotifState } from '$extensions/wavedash/wavedash.svelte';
-	import { BASE_URL } from '$extensions/settings/settings.svelte';
+	import { wavedashActions } from '$extensions/wavedash/wavedash.svelte';
 
 	const countdown = $derived(Math.ceil(gameState.startTimer));
 	const avgPerDecoration = $derived(
@@ -94,13 +93,13 @@
 		{/if}
 	</div>
 
-	<!-- Carrying indicator — bottom center -->
-	{#if gameState.status === 'playing' && decorationState.carrying}
+	<!-- Carrying indicator — always in DOM while playing; CSS transitions avoid DOM insertion stutter on pickup -->
+	{#if gameState.status === 'playing'}
 		{@const itemLabel = DECORATION_LABELS[decorationState.carriedIndex] ?? 'Decoration'}
 		{@const itemIcon = DECORATION_ICONS[decorationState.carriedIndex] ?? '💎'}
 		<div
-			class="absolute bottom-28 left-1/2 -translate-x-1/2"
-			transition:fly={{ y: 8, duration: 180 }}
+			class="absolute bottom-28 left-1/2"
+			style="transform: translate(-50%, {decorationState.carrying ? '0px' : '8px'}); opacity: {decorationState.carrying ? 1 : 0}; transition: transform 180ms, opacity 180ms;"
 		>
 			<div
 				class="flex items-center gap-2 bg-purple-900/80 border-2 border-purple-400/70 rounded-full px-4 py-1.5 backdrop-blur-sm"
@@ -378,46 +377,4 @@
 		<SpeedEffect />
 	{/if}
 
-	<!-- Achievement notification -->
-	{#if achievementNotifState.current}
-		{@const notif = achievementNotifState.current}
-		<div
-			class="pointer-events-none absolute inset-0 flex items-center justify-center"
-			transition:fly={{ y: -20, duration: 300 }}
-		>
-			<div
-				class="flex items-center gap-3 bg-black/80 border-4 border-amber-400
-				       rounded-xl px-4 py-3 backdrop-blur-md"
-				style="box-shadow: 4px 4px 0 #000, 0 0 30px #f59e0b40;"
-			>
-				<!-- Image placeholder — drop public/achievements/{id}.png to replace emoji -->
-				<div
-					class="w-12 h-12 shrink-0 rounded-lg border-2 border-black bg-white/5 flex items-center justify-center overflow-hidden"
-					style="box-shadow: 2px 2px 0 #000;"
-				>
-					<img
-						src="{BASE_URL}achievements/{notif.id}.png"
-						alt={notif.title}
-						class="w-full h-full object-cover"
-						onerror={(e) => {
-							(e.currentTarget as HTMLImageElement).style.display = 'none';
-							(e.currentTarget.nextElementSibling as HTMLElement).style.display = 'flex';
-						}}
-					/>
-					<span class="text-2xl hidden items-center justify-center w-full h-full select-none">
-						{notif.icon}
-					</span>
-				</div>
-
-				<div class="flex flex-col gap-0.5">
-					<span class="text-amber-400 font-black uppercase tracking-widest leading-none" style="font-size:9px;">
-						🏅 Achievement Unlocked!
-					</span>
-					<span class="text-white font-black text-sm leading-none" style="text-shadow: 1px 1px 0 #000;">
-						{notif.title}
-					</span>
-				</div>
-			</div>
-		</div>
-	{/if}
 </div>
