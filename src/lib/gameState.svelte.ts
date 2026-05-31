@@ -11,7 +11,8 @@ export const gameState = $state({
 	cheeseInRange: false,
 	elapsed: 0,
 	inSafeZone: false,
-	isSprinting: false
+	isSprinting: false,
+	hitCount: 0
 });
 
 export const gameActions = {
@@ -22,6 +23,7 @@ export const gameActions = {
 		gameState.stamina = 100;
 		gameState.sound = 0;
 		gameState.elapsed = 0;
+		gameState.hitCount = 0;
 	},
 	win() {
 		gameState.status = 'win';

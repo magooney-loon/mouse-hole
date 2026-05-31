@@ -38,11 +38,12 @@
 					Scoreboard
 				</h2>
 			</div>
-			<span class="text-white/40 text-xs font-black uppercase tracking-widest">Items Collected</span>
+			<span class="text-white/40 text-xs font-black uppercase tracking-widest">Items Collected</span
+			>
 		</div>
 
 		<!-- Score rows -->
-		<div class="flex flex-col gap-1.5 min-h-[200px]">
+		<div class="flex flex-col gap-1.5 min-h-50">
 			{#if leaderboardState.loading}
 				<div class="flex-1 flex items-center justify-center text-white/40 font-black text-sm py-10">
 					Loading...
@@ -59,9 +60,7 @@
 					{@const isMe = leaderboardState.myEntry?.globalRank === entry.globalRank}
 					<div
 						class="flex items-center gap-3 px-3 py-2 rounded-lg border
-						       {isMe
-							? 'bg-amber-400/15 border-amber-400/50'
-							: 'bg-white/5 border-white/5'}"
+						       {isMe ? 'bg-amber-400/15 border-amber-400/50' : 'bg-white/5 border-white/5'}"
 					>
 						<span
 							class="w-7 shrink-0 text-center font-black text-sm tabular-nums
@@ -75,10 +74,16 @@
 						>
 							#{entry.globalRank}
 						</span>
-						<span class="flex-1 font-black text-sm truncate {isMe ? 'text-amber-300' : 'text-white/80'}">
+						<span
+							class="flex-1 font-black text-sm truncate {isMe ? 'text-amber-300' : 'text-white/80'}"
+						>
 							{entry.username}{isMe ? ' (you)' : ''}
 						</span>
-						<span class="font-black text-sm tabular-nums shrink-0 {isMe ? 'text-amber-300' : 'text-white/50'}">
+						<span
+							class="font-black text-sm tabular-nums shrink-0 {isMe
+								? 'text-amber-300'
+								: 'text-white/50'}"
+						>
 							{formatScore(entry.score)}
 						</span>
 					</div>

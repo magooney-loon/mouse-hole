@@ -99,7 +99,11 @@
 		{@const itemIcon = DECORATION_ICONS[decorationState.carriedIndex] ?? '💎'}
 		<div
 			class="absolute bottom-28 left-1/2"
-			style="transform: translate(-50%, {decorationState.carrying ? '0px' : '8px'}); opacity: {decorationState.carrying ? 1 : 0}; transition: transform 180ms, opacity 180ms;"
+			style="transform: translate(-50%, {decorationState.carrying
+				? '0px'
+				: '8px'}); opacity: {decorationState.carrying
+				? 1
+				: 0}; transition: transform 180ms, opacity 180ms;"
 		>
 			<div
 				class="flex items-center gap-2 bg-purple-900/80 border-2 border-purple-400/70 rounded-full px-4 py-1.5 backdrop-blur-sm"
@@ -377,4 +381,31 @@
 		<SpeedEffect />
 	{/if}
 
+	<!-- Cat hit vignette — {#key} restarts the CSS animation on each new hit -->
+	{#if gameState.hitCount > 0}
+		{#key gameState.hitCount}
+			<div class="hit-vignette"></div>
+		{/key}
+	{/if}
 </div>
+
+<style>
+	@keyframes hit-vignette {
+		0% {
+			opacity: 0.85;
+		}
+		35% {
+			opacity: 0.6;
+		}
+		100% {
+			opacity: 0;
+		}
+	}
+	.hit-vignette {
+		position: absolute;
+		inset: 0;
+		pointer-events: none;
+		background: radial-gradient(ellipse at center, transparent 25%, rgba(200, 10, 30, 0.85) 100%);
+		animation: hit-vignette 0.7s ease-out forwards;
+	}
+</style>

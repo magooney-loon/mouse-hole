@@ -19,7 +19,6 @@
 	const { actions } = useGltfAnimations(gltf);
 
 	let currentAnim: string | null = null;
-	let activeAction: any = null;
 
 	const playAnim = (name: string, loop = true) => {
 		if (name === currentAnim) return;
@@ -32,7 +31,6 @@
 		act.reset().fadeIn(0.25).play();
 		if (loop) act.setLoop(LoopRepeat, Infinity);
 		currentAnim = name;
-		activeAction = act;
 	};
 
 	$effect(() => {
@@ -189,7 +187,6 @@
 	onDestroy(() => {
 		catBody = null;
 		currentAnim = null;
-		activeAction = null;
 	});
 
 	// ── Reusable vectors (avoid per-frame alloc) ───────────────────────────────
@@ -290,6 +287,7 @@
 	const hitMouse = () => {
 		const damage = 5 + Math.floor(Math.random() * 11);
 		gameState.hunger = Math.max(0, gameState.hunger - damage);
+		gameState.hitCount++;
 		playAnim('attack', false);
 		attacking = true;
 		attackTimer = CATCH_COOLDOWN;
@@ -915,13 +913,11 @@
 		if (attacking) {
 			playAnim('attack', false);
 		} else if (catAIState.mode === 'chase') {
-			playAnim('GltfAnimation 0');
-			if (activeAction) activeAction.setEffectiveTimeScale(1.5);
+			playAnim('sprint');
 		} else if (sitting) {
 			playAnim('sit');
 		} else {
 			playAnim('GltfAnimation 0');
-			if (activeAction) activeAction.setEffectiveTimeScale(1.0);
 		}
 
 		updateVisionCone(t, delta);
