@@ -63,10 +63,10 @@
 	// Snap item onto the floor directly below its current XZ position
 	const settleToFloor = () => {
 		_floorRay.origin.x = itemX;
-		_floorRay.origin.y = itemY + 1;
+		_floorRay.origin.y = itemY + BALL_R;
 		_floorRay.origin.z = itemZ;
 		const hit = world.castRay(_floorRay, 10, false);
-		if (hit) itemY = itemY + 1 - hit.timeOfImpact + BALL_R;
+		if (hit) itemY = itemY + BALL_R - hit.timeOfImpact + BALL_R;
 	};
 
 	const dropItem = () => {
@@ -213,11 +213,11 @@
 		// Continuous floor settle — items dropped mid-air (stuck recovery etc.) fall down
 		if (!isDragging) {
 			_floorRay.origin.x = itemX;
-			_floorRay.origin.y = itemY + 0.5;
+			_floorRay.origin.y = itemY + BALL_R;
 			_floorRay.origin.z = itemZ;
 			const floorHit = world.castRay(_floorRay, 6, false);
 			if (floorHit) {
-				const floorY = itemY + 0.5 - floorHit.timeOfImpact + BALL_R;
+				const floorY = itemY + BALL_R - floorHit.timeOfImpact + BALL_R;
 				if (itemY > floorY + 0.01) itemY = Math.max(floorY, itemY - delta * 4);
 			}
 		}
