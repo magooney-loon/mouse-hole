@@ -3,8 +3,10 @@
 	import { soundActions } from '$core/GlobalAudio.svelte';
 	import { gameActions } from '$lib/gameState.svelte';
 	import SettingsHud from '$scenes/SettingsHud.svelte';
+	import Scoreboard from './Scoreboard.svelte';
 
 	let showSettings = $state(false);
+	let showScoreboard = $state(false);
 
 	const btnBase = `w-full font-black rounded-xl cursor-pointer border-4 border-black
 	                 transition-all duration-100
@@ -12,7 +14,13 @@
 	                 active:translate-x-[4px] active:translate-y-[4px]`;
 </script>
 
-{#if !showSettings}
+{#if showScoreboard}
+	<Scoreboard
+		onBack={() => {
+			showScoreboard = false;
+		}}
+	/>
+{:else if !showSettings}
 	<div class="pointer-events-auto absolute inset-0 flex items-center justify-center">
 		<div
 			class="relative flex flex-col gap-5 w-full max-w-xl mx-4 px-8 py-7
@@ -67,6 +75,20 @@
 					onmouseleave={(e) => (e.currentTarget.style.boxShadow = '6px 6px 0 #000')}
 				>
 					🚪 Leave the Hole
+				</button>
+
+				<button
+					onclick={() => {
+						soundActions.playClick();
+						showScoreboard = true;
+					}}
+					class="{btnBase} py-3 text-base bg-white/10 text-white"
+					style="box-shadow: 4px 4px 0 #000;"
+					onmousedown={(e) => (e.currentTarget.style.boxShadow = '1px 1px 0 #000')}
+					onmouseup={(e) => (e.currentTarget.style.boxShadow = '4px 4px 0 #000')}
+					onmouseleave={(e) => (e.currentTarget.style.boxShadow = '4px 4px 0 #000')}
+				>
+					🏆 Scoreboard
 				</button>
 
 				<div class="grid grid-cols-2 gap-3">

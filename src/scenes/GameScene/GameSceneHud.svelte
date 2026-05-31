@@ -13,6 +13,7 @@
 		DECORATION_ICONS,
 		DECORATION_TOTAL
 	} from '$lib/decorationState.svelte';
+	import { wavedashActions } from '$extensions/wavedash/wavedash.svelte';
 
 	const countdown = $derived(Math.ceil(gameState.startTimer));
 	const avgPerDecoration = $derived(
@@ -24,11 +25,16 @@
 			untrack(() => {
 				soundActions.playMouseGameover();
 				soundActions.playKatzeWin();
+				wavedashActions.submitRunScore(decorationState.deliveredCount);
 			});
 		}
 		if (gameState.status === 'win') {
 			untrack(() => {
 				soundActions.playMouseGameover();
+				wavedashActions.submitRunScore(
+					decorationState.deliveredCount,
+					Math.round((gameState.elapsed / decorationState.deliveredCount) * 1000)
+				);
 			});
 		}
 	});
