@@ -222,7 +222,7 @@
 	const isGrounded = (): boolean => {
 		const t = catBody.translation();
 		// Cast from the bottom of the cat's collider (y - halfHeight)
-		const ray = new rapier.Ray({ x: t.x, y: t.y - 0.3, z: t.z }, { x: 0, y: -1, z: 0 });
+		const ray = new rapier.Ray({ x: t.x, y: t.y - 0.24, z: t.z }, { x: 0, y: -1, z: 0 });
 		return !!world.castRay(ray, GROUND_RAY_LEN, true, undefined, undefined, undefined, catBody);
 	};
 
@@ -952,14 +952,14 @@
 		}}
 	>
 		<Collider
-			shape="cuboid"
-			args={[0.22, 0.3, 0.6]}
+			shape="roundCuboid"
+			args={[0.17, 0.24, 0.42, 0.05]}
 			oncreate={(c) => c.setCollisionGroups(0xfffe0002)}
 		/>
 
 		<!-- Debug: collider visualization (remove when done) -->
 		<!-- <T.Mesh>
-			<T.BoxGeometry args={[0.44, 0.6, 1.2]} />
+			<T.BoxGeometry args={[0.34, 0.48, 0.84]} />
 			<T.MeshBasicMaterial color={0xff0000} wireframe transparent opacity={0.5} />
 		</T.Mesh> -->
 
