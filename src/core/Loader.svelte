@@ -28,9 +28,13 @@
 	});
 
 	let showSoundPrompt = $state(false);
+	let soundPromptOffered = false;
 
 	$effect(() => {
-		if (isFinished) showSoundPrompt = true;
+		if (isFinished && !soundPromptOffered) {
+			soundPromptOffered = true;
+			showSoundPrompt = true;
+		}
 	});
 
 	function enableSounds() {
