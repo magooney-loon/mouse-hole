@@ -26,9 +26,9 @@
 
 	const PICKUP_RADIUS = 1.1;
 	const CAPTURE_RADIUS = 0.45;
-	const DRAG_SPEED = 7;
-	const DRAG_MAX_DIST = 1.2;
-	const PUSH_DIST = 0.55;
+	const DRAG_SPEED = 14;
+	const DRAG_MAX_DIST = 0.6;
+	const PUSH_DIST = 0.3;
 	const BALL_R = 0.1;
 
 	const STUCK_SPEED = 0.5; // m/s — below this while dist > STUCK_DIST = stuck
@@ -255,7 +255,7 @@
 		} else {
 			if (pickupCooldown > 0) pickupCooldown -= delta;
 
-			if (justPressed) {
+			if (justPressed && pickupCooldown <= 0) {
 				dropItem();
 				return;
 			}
@@ -281,9 +281,15 @@
 				const oy = itemY + 0.05; // slight Y lift to skip floor
 
 				// Three surface-origin rays: centre + left/right flanks catch corner contacts
-				_wallRayC.origin.x = itemX + nx * BALL_R; _wallRayC.origin.y = oy; _wallRayC.origin.z = itemZ + nz * BALL_R;
-				_wallRayL.origin.x = itemX + px * BALL_R; _wallRayL.origin.y = oy; _wallRayL.origin.z = itemZ + pz * BALL_R;
-				_wallRayR.origin.x = itemX - px * BALL_R; _wallRayR.origin.y = oy; _wallRayR.origin.z = itemZ - pz * BALL_R;
+				_wallRayC.origin.x = itemX + nx * BALL_R;
+				_wallRayC.origin.y = oy;
+				_wallRayC.origin.z = itemZ + nz * BALL_R;
+				_wallRayL.origin.x = itemX + px * BALL_R;
+				_wallRayL.origin.y = oy;
+				_wallRayL.origin.z = itemZ + pz * BALL_R;
+				_wallRayR.origin.x = itemX - px * BALL_R;
+				_wallRayR.origin.y = oy;
+				_wallRayR.origin.z = itemZ - pz * BALL_R;
 				_wallRayC.dir.x = _wallRayL.dir.x = _wallRayR.dir.x = nx;
 				_wallRayC.dir.y = _wallRayL.dir.y = _wallRayR.dir.y = 0;
 				_wallRayC.dir.z = _wallRayL.dir.z = _wallRayR.dir.z = nz;
@@ -313,9 +319,6 @@
 			if (dist > STUCK_DIST && currentSpeed < STUCK_SPEED && pickupCooldown <= 0) {
 				stuckTimer += delta;
 				if (stuckTimer > STUCK_TIME) {
-					itemX = mouseSharedPos.x;
-					itemZ = mouseSharedPos.z;
-					itemY = mouseSharedPos.y;
 					dropItem();
 					return;
 				}
@@ -325,13 +328,10 @@
 			prevItemX = itemX;
 			prevItemZ = itemZ;
 
-			// Safety net: item somehow far from mouse — drop at mouse
+			// Safety net: item somehow far from mouse — drop in place
 			const dragDx = mouseSharedPos.x - itemX;
 			const dragDz = mouseSharedPos.z - itemZ;
 			if (Math.sqrt(dragDx * dragDx + dragDz * dragDz) > DRAG_MAX_DIST) {
-				itemX = mouseSharedPos.x;
-				itemZ = mouseSharedPos.z;
-				itemY = mouseSharedPos.y;
 				dropItem();
 				return;
 			}
