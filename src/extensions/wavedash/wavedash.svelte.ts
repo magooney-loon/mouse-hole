@@ -35,6 +35,8 @@ const ACHIEVEMENT_META: Record<string, { title: string; icon: string }> = {
 export const leaderboardState = $state({
 	topItems: [] as LeaderboardEntry[],
 	myEntry: null as LeaderboardEntry | null,
+	speedrunTop: [] as LeaderboardEntry[],
+	speedrunMyEntry: null as LeaderboardEntry | null,
 	loading: false,
 	ready: false
 });
@@ -112,14 +114,22 @@ export const wavedashActions = {
 		try {
 			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			const a = s as any;
-			const [top, mine] = await Promise.all([
+			const promises = [
 				a.listLeaderboardEntries(scoreboardId, 0, 10, false),
-				a.getMyLeaderboardEntries(scoreboardId)
-			]);
+				a.getMyLeaderboardEntries(scoreboardId),
+				speedrunId ? a.listLeaderboardEntries(speedrunId, 0, 5, false) : Promise.resolve(null),
+				speedrunId ? a.getMyLeaderboardEntries(speedrunId) : Promise.resolve(null)
+			];
+			const [top, mine, speedTop, speedMine] = await Promise.all(promises);
 			leaderboardState.topItems = (top?.data ?? []) as LeaderboardEntry[];
 			const myRaw = mine?.data;
 			leaderboardState.myEntry = (
 				Array.isArray(myRaw) ? (myRaw[0] ?? null) : (myRaw ?? null)
+			) as LeaderboardEntry | null;
+			leaderboardState.speedrunTop = ((speedTop as any)?.data ?? []) as LeaderboardEntry[];
+			const speedMyRaw = (speedMine as any)?.data;
+			leaderboardState.speedrunMyEntry = (
+				Array.isArray(speedMyRaw) ? (speedMyRaw[0] ?? null) : (speedMyRaw ?? null)
 			) as LeaderboardEntry | null;
 		} finally {
 			leaderboardState.loading = false;

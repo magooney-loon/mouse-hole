@@ -19,6 +19,10 @@
 	function formatScore(score: number): string {
 		return `${score} item${score !== 1 ? 's' : ''}`;
 	}
+
+	function formatAvgTime(ms: number): string {
+		return `${(ms / 1000).toFixed(1)}s / item`;
+	}
 </script>
 
 <div class="pointer-events-auto absolute inset-0 flex items-center justify-center">
@@ -109,6 +113,52 @@
 				{/if}
 			{/if}
 		</div>
+
+		<!-- Speedrun board -->
+		{#if leaderboardState.speedrunTop.length > 0}
+			<div class="border-t-2 border-white/10 pt-3 flex flex-col gap-1.5">
+				<div class="flex items-center justify-between">
+					<span class="text-white/50 text-xs font-black uppercase tracking-widest">⚡ Best Avg Time</span>
+					<span class="text-white/30 text-xs font-black uppercase tracking-widest">per item</span>
+				</div>
+				{#each leaderboardState.speedrunTop as entry, i}
+					{@const isMe = leaderboardState.speedrunMyEntry?.globalRank === entry.globalRank}
+					<div
+						class="flex items-center gap-3 px-3 py-1.5 rounded-lg border
+						       {isMe ? 'bg-amber-400/15 border-amber-400/50' : 'bg-white/5 border-white/5'}"
+					>
+						<span
+							class="w-7 shrink-0 text-center font-black text-xs tabular-nums
+							       {i === 0 ? 'text-amber-300' : i === 1 ? 'text-white/60' : i === 2 ? 'text-amber-600' : 'text-white/25'}"
+						>
+							#{entry.globalRank}
+						</span>
+						<span class="flex-1 font-black text-xs truncate {isMe ? 'text-amber-300' : 'text-white/70'}">
+							{entry.username}{isMe ? ' (you)' : ''}
+						</span>
+						<span class="font-black text-xs tabular-nums shrink-0 {isMe ? 'text-amber-300' : 'text-white/50'}">
+							{formatAvgTime(entry.score)}
+						</span>
+					</div>
+				{/each}
+
+				{#if leaderboardState.speedrunMyEntry && !leaderboardState.speedrunTop.some((e) => e.globalRank === leaderboardState.speedrunMyEntry?.globalRank)}
+					<div class="mt-1 border-t border-white/10 pt-1.5">
+						<div class="flex items-center gap-3 px-3 py-1.5 rounded-lg bg-amber-400/15 border border-amber-400/50">
+							<span class="w-7 shrink-0 text-center font-black text-xs text-amber-300 tabular-nums">
+								#{leaderboardState.speedrunMyEntry.globalRank}
+							</span>
+							<span class="flex-1 font-black text-xs text-amber-300 truncate">
+								{leaderboardState.speedrunMyEntry.username} (you)
+							</span>
+							<span class="font-black text-xs text-amber-300 tabular-nums shrink-0">
+								{formatAvgTime(leaderboardState.speedrunMyEntry.score)}
+							</span>
+						</div>
+					</div>
+				{/if}
+			</div>
+		{/if}
 
 		<!-- Back button -->
 		<button
