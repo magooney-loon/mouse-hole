@@ -1,14 +1,9 @@
 <script lang="ts">
 	import { fly } from 'svelte/transition';
-	import {
-		settingsState,
-		graphicsActions,
-		audioActions
-	} from '$extensions/settings/settings.svelte';
+	import { settingsState, audioActions } from '$extensions/settings/settings.svelte';
 	import { soundActions } from '$core/GlobalAudio.svelte';
 	import { inputState, inputActions } from '$extensions/input/input.svelte';
 	import type { InputAction, AnyBinding } from '$extensions/input/types';
-	import type { QualityLevel } from '$extensions/settings/settings.svelte';
 
 	type Props = { onBack: () => void };
 	let { onBack }: Props = $props();
@@ -281,33 +276,6 @@
 				<!-- General tab -->
 			{:else if activeTab === 'general'}
 				<div class="flex flex-col gap-5">
-					<!-- Graphics -->
-					<div>
-						<p class="m-0 mb-3 text-xs font-black uppercase tracking-widest text-white/40">
-							🖥️ Graphics
-						</p>
-						<div class="flex gap-2">
-							{#each ['low', 'high'] as level}
-								<button
-									onclick={() => {
-										soundActions.playClick();
-										graphicsActions.setQuality(level as QualityLevel);
-									}}
-									class="flex-1 px-4 py-2.5 rounded-xl border-4 border-black font-black text-sm
-									       transition-all duration-100 capitalize cursor-pointer
-									       {settingsState.graphics.quality === level
-										? 'bg-amber-400 text-black'
-										: 'bg-white/10 text-white/50 hover:bg-white/15 hover:text-white/80'}"
-									style={settingsState.graphics.quality === level
-										? 'box-shadow: 3px 3px 0 #000;'
-										: ''}
-								>
-									{level === 'low' ? '🐌 Low' : '✨ High'}
-								</button>
-							{/each}
-						</div>
-					</div>
-
 					<!-- Audio -->
 					<div>
 						<p class="m-0 mb-3 text-xs font-black uppercase tracking-widest text-white/40">
