@@ -346,8 +346,8 @@
 		}}
 	>
 		<Collider
-			shape="cuboid"
-			args={[0.07, 0.1, 0.16]}
+			shape="roundCuboid"
+			args={[0.05, 0.05, 0.12, 0.005]}
 			oncreate={(c) => c.setCollisionGroups(0xfffd0001)}
 		/>
 

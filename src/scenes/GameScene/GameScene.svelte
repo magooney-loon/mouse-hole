@@ -3,7 +3,7 @@
 	import { Collider } from '@threlte/rapier';
 	import Mouse from '$lib/Mouse.svelte';
 	import CatAI from '$lib/CatAI.svelte';
-	// import { Debug } from '@threlte/rapier';
+	/* import { Debug } from '@threlte/rapier'; */
 	import Cheese from '$lib/Cheese.svelte';
 	import Decoration from '$lib/Decoration.svelte';
 	import SpawnPoint from '$lib/SpawnPoint.svelte';
@@ -68,7 +68,7 @@
 
 <!-- Static floor placeholder -->
 <T.Group>
-	<Collider shape="cuboid" args={[50, 0.01, 50]} />
+	<Collider shape="cuboid" args={[50, 0.03, 50]} />
 	<T.Mesh receiveShadow>
 		<T.BoxGeometry args={[100, 0.2, 100]} />
 		<T.MeshStandardMaterial color="#8B6914" transparent opacity={0.01} />
