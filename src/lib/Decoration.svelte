@@ -210,6 +210,18 @@
 			groupRef.scale.setScalar(Math.max(0, s));
 		}
 
+		// Continuous floor settle — items dropped mid-air (stuck recovery etc.) fall down
+		if (!isDragging) {
+			_floorRay.origin.x = itemX;
+			_floorRay.origin.y = itemY + 0.5;
+			_floorRay.origin.z = itemZ;
+			const floorHit = world.castRay(_floorRay, 6, false);
+			if (floorHit) {
+				const floorY = itemY + 0.5 - floorHit.timeOfImpact + BALL_R;
+				if (itemY > floorY + 0.01) itemY = Math.max(floorY, itemY - delta * 4);
+			}
+		}
+
 		bobT += delta;
 		if (!isDragging && appearT >= 1) {
 			groupRef.position.y = itemY + 0.04 + Math.sin(bobT * 2.2) * 0.022;
