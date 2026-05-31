@@ -7,6 +7,15 @@
 
 	let showSettings = $state(false);
 	let showScoreboard = $state(false);
+	let copiedLink = $state(false);
+
+	function copySourceLink() {
+		soundActions.playClick();
+		navigator.clipboard.writeText('https://github.com/magooney-loon/mouse-hole').then(() => {
+			copiedLink = true;
+			setTimeout(() => (copiedLink = false), 2000);
+		});
+	}
 
 	const btnBase = `w-full font-black rounded-xl cursor-pointer border-4 border-black
 	                 transition-all duration-100
@@ -92,19 +101,16 @@
 				</button>
 
 				<div class="grid grid-cols-2 gap-3">
-					<a
-						href="https://github.com/magooney-loon/mouse-hole"
-						target="_blank"
-						rel="noopener noreferrer"
-						onclick={() => soundActions.playClick()}
+					<button
+						onclick={copySourceLink}
 						class="{btnBase} py-3 text-base bg-white/10 text-white text-center"
 						style="box-shadow: 4px 4px 0 #000;"
 						onmousedown={(e) => (e.currentTarget.style.boxShadow = '1px 1px 0 #000')}
 						onmouseup={(e) => (e.currentTarget.style.boxShadow = '4px 4px 0 #000')}
 						onmouseleave={(e) => (e.currentTarget.style.boxShadow = '4px 4px 0 #000')}
 					>
-						🐙 Source Code
-					</a>
+						{copiedLink ? '✅ Copied!' : '🐙 Source Code'}
+					</button>
 
 					<button
 						onclick={() => {
