@@ -26,7 +26,7 @@
 
 	const PICKUP_RADIUS = 1.1;
 	const CAPTURE_RADIUS = 0.45;
-	const DRAG_SPEED = 14;
+
 	const DRAG_MAX_DIST = 0.6;
 	const PUSH_DIST = 0.3;
 	const BALL_R = 0.1;
@@ -305,8 +305,9 @@
 
 				const STOP_CLEARANCE = 0.06;
 				if (clearance > STOP_CLEARANCE) {
-					const speed = Math.min(dist * 13, DRAG_SPEED, clearance * 15);
-					const move = Math.min(speed * delta, clearance - STOP_CLEARANCE);
+					const followRate = Math.min(1, delta * 40);
+					const desiredMove = dist * followRate;
+					const move = Math.min(desiredMove, clearance - STOP_CLEARANCE);
 					itemX += nx * move;
 					itemZ += nz * move;
 				}
