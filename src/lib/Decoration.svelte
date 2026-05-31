@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { T, useTask } from '@threlte/core';
-	import { RigidBody, Collider, useRapier } from '@threlte/rapier';
+	import { useRapier } from '@threlte/rapier';
 	import { onDestroy } from 'svelte';
 	import * as THREE from 'three';
 	import { inputQueries } from '$extensions/input/input.svelte';
@@ -19,20 +19,22 @@
 
 	const { world, rapier } = useRapier();
 
-	// Pre-allocated ray — avoids 3 object allocations per frame during drag
-	const _wallRay = new rapier.Ray({ x: 0, y: 0, z: 0 }, { x: 1, y: 0, z: 0 });
-
-	const PICKUP_RADIUS = 1.1; // start dragging when mouse this close
-	const CAPTURE_RADIUS = 0.45; // auto-deliver when body this close to spawn
-	const DRAG_SPEED = 7; // max push velocity m/s
-	const DRAG_MAX_DIST = 1.2; // auto-drop if decoration this far from mouse
-	const PUSH_DIST = 0.55; // how far in front of mouse to target
-
-	const SPAWN_Y_OFFSET = 0.2; // extra clearance above surface to prevent clipping
+	const PICKUP_RADIUS = 1.1;
+	const CAPTURE_RADIUS = 0.45;
+	const DRAG_SPEED = 7;
+	const DRAG_MAX_DIST = 1.2;
+	const PUSH_DIST = 0.55;
+	const BALL_R = 0.1;
 
 	const STUCK_SPEED = 0.5; // m/s — below this while dist > STUCK_DIST = stuck
-	const STUCK_DIST = 0.25; // m from target while checking stuck
-	const STUCK_TIME = 0.3; // seconds before auto-drop at mouse feet
+	const STUCK_DIST = 0.25;
+	const STUCK_TIME = 0.4;
+
+	// Pre-allocated rays — no per-frame allocation
+	const _wallRayC = new rapier.Ray({ x: 0, y: 0, z: 0 }, { x: 1, y: 0, z: 0 });
+	const _wallRayL = new rapier.Ray({ x: 0, y: 0, z: 0 }, { x: 1, y: 0, z: 0 });
+	const _wallRayR = new rapier.Ray({ x: 0, y: 0, z: 0 }, { x: 1, y: 0, z: 0 });
+	const _floorRay = new rapier.Ray({ x: 0, y: 0, z: 0 }, { x: 0, y: -1, z: 0 });
 
 	let isDragging = false;
 	let delivered = false;
@@ -40,13 +42,37 @@
 	let appearT = 0;
 	let bobT = 0;
 	let prevInteract = false;
-	let stuckTimer = 0;
 	let pickupCooldown = 0;
+	let stuckTimer = 0;
+	let prevItemX = 0;
+	let prevItemZ = 0;
+
+	// Item world position — driven directly, no rigid body
+	let itemX = position[0];
+	let itemY = position[1];
+	let itemZ = position[2];
 
 	let lightRef: THREE.PointLight | null = null;
 	let groupRef: THREE.Group | null = null;
 	let circleRef: THREE.Mesh | null = null;
-	let decorBody: any = null;
+
+	// Snap item onto the floor directly below its current XZ position
+	const settleToFloor = () => {
+		_floorRay.origin.x = itemX;
+		_floorRay.origin.y = itemY + 1;
+		_floorRay.origin.z = itemZ;
+		const hit = world.castRay(_floorRay, 10, false);
+		if (hit) itemY = itemY + 1 - hit.timeOfImpact + BALL_R;
+	};
+
+	const dropItem = () => {
+		isDragging = false;
+		stuckTimer = 0;
+		decorationActions.drop();
+		settleToFloor();
+		if (lightRef) lightRef.intensity = 0.9;
+		if (decorationState.deliverInRange) decorationState.deliverInRange = false;
+	};
 
 	// ── Spark pool ────────────────────────────────────────────────────────────
 	const SPARK_COUNT = 10;
@@ -105,38 +131,6 @@
 		for (const s of sparks) (s.mesh.material as THREE.Material).dispose();
 	});
 
-	const resetBody = () => {
-		if (!decorBody) return;
-		decorBody.setTranslation(
-			{ x: position[0], y: position[1] + SPAWN_Y_OFFSET, z: position[2] },
-			true
-		);
-		decorBody.setLinvel({ x: 0, y: 0, z: 0 }, true);
-		decorBody.setAngvel({ x: 0, y: 0, z: 0 }, true);
-	};
-
-	const hideBody = () => {
-		if (!decorBody) return;
-		decorBody.setTranslation({ x: position[0], y: -50, z: position[2] }, true);
-		decorBody.setLinvel({ x: 0, y: 0, z: 0 }, true);
-	};
-
-	const dropAtMouse = () => {
-		isDragging = false;
-		stuckTimer = 0;
-		decorationActions.drop();
-		if (decorBody) {
-			decorBody.setTranslation(
-				{ x: mouseSharedPos.x, y: mouseSharedPos.y + 0.25, z: mouseSharedPos.z },
-				true
-			);
-			decorBody.setLinvel({ x: 0, y: 0, z: 0 }, true);
-			decorBody.setAngvel({ x: 0, y: 0, z: 0 }, true);
-		}
-		if (lightRef) lightRef.intensity = 0.9;
-		if (decorationState.deliverInRange) decorationState.deliverInRange = false;
-	};
-
 	$effect(() => {
 		if (gameState.status === 'starting') {
 			isDragging = false;
@@ -145,14 +139,18 @@
 			bobT = 0;
 			wasInRange = false;
 			prevInteract = false;
-			stuckTimer = 0;
 			pickupCooldown = 0;
+			stuckTimer = 0;
+			itemX = position[0];
+			itemY = position[1];
+			itemZ = position[2];
+			settleToFloor();
 			decorationActions.reset();
 			if (groupRef) {
 				groupRef.visible = true;
 				groupRef.scale.setScalar(0);
+				groupRef.position.set(itemX, itemY, itemZ);
 			}
-			resetBody();
 		}
 	});
 
@@ -177,7 +175,7 @@
 			s.mesh.scale.setScalar(Math.max(0, 1 - t * t));
 		}
 
-		if (!groupRef || !decorBody || gameState.status !== 'playing') {
+		if (!groupRef || gameState.status !== 'playing') {
 			if (wasInRange) {
 				decorationState.pickupInRange = false;
 				wasInRange = false;
@@ -191,19 +189,14 @@
 
 		if (delivered) return;
 
-		const pos = decorBody.translation();
-		let vel = decorBody.linvel();
+		// Sync visual to item position
+		groupRef.position.set(itemX, itemY, itemZ);
 
-		// Sync visual to physics body
-		groupRef.position.set(pos.x, pos.y, pos.z);
-		groupRef.rotation.y = decorBody.rotation().y; // follow physics tumble
-
-		// Floor circle follows body position (sits just under the ball on whatever surface it's on)
 		if (circleRef) {
-			circleRef.position.x = pos.x;
-			circleRef.position.y = pos.y - 0.09;
-			circleRef.position.z = pos.z;
-			circleRef.visible = !delivered;
+			circleRef.position.x = itemX;
+			circleRef.position.y = itemY - 0.09;
+			circleRef.position.z = itemZ;
+			circleRef.visible = true;
 		}
 
 		// Pop-in
@@ -215,9 +208,8 @@
 		}
 
 		bobT += delta;
-		// Bob + spin while idle (not dragging, fully appeared)
 		if (!isDragging && appearT >= 1) {
-			groupRef.position.y = pos.y + 0.04 + Math.sin(bobT * 2.2) * 0.022;
+			groupRef.position.y = itemY + 0.04 + Math.sin(bobT * 2.2) * 0.022;
 			groupRef.rotation.y = bobT * 0.75;
 		}
 
@@ -226,10 +218,9 @@
 		prevInteract = interact;
 
 		if (!isDragging) {
-			// Range check against mouse position
-			const dx = mouseSharedPos.x - pos.x;
-			const dy = mouseSharedPos.y - pos.y;
-			const dz = mouseSharedPos.z - pos.z;
+			const dx = mouseSharedPos.x - itemX;
+			const dy = mouseSharedPos.y - itemY;
+			const dz = mouseSharedPos.z - itemZ;
 			const inRange = Math.sqrt(dx * dx + dy * dy + dz * dz) < PICKUP_RADIUS;
 			if (inRange !== wasInRange) {
 				decorationState.pickupInRange = inRange;
@@ -240,123 +231,103 @@
 				isDragging = true;
 				stuckTimer = 0;
 				pickupCooldown = 0.35;
+				prevItemX = itemX;
+				prevItemZ = itemZ;
 				decorationActions.pickup(index);
-				spawnSparks(pos.x, pos.y, pos.z);
+				spawnSparks(itemX, itemY, itemZ);
 				soundActions.playMouseEating();
 			}
 		} else {
 			if (pickupCooldown > 0) pickupCooldown -= delta;
 
-			// Second press → drop in place
 			if (justPressed) {
-				isDragging = false;
-				stuckTimer = 0;
-				decorationActions.drop();
-				if (lightRef) lightRef.intensity = 0.9;
-				if (decorationState.deliverInRange) decorationState.deliverInRange = false;
+				dropItem();
 				return;
 			}
 
-			// Target: in front of the mouse, matching its height
 			const fwdX = -Math.sin(mouseSharedFacing.angle);
 			const fwdZ = -Math.cos(mouseSharedFacing.angle);
 			const tx = mouseSharedPos.x + fwdX * PUSH_DIST;
 			const tz = mouseSharedPos.z + fwdZ * PUSH_DIST;
 
-			const dx = tx - pos.x;
-			const dz = tz - pos.z;
+			const dx = tx - itemX;
+			const dz = tz - itemZ;
 			const dist = Math.sqrt(dx * dx + dz * dz);
 
-			// Vertical follow — carry ball upward when mouse jumps
-			const dy = mouseSharedPos.y - pos.y;
-			if (dy > 0.1) {
-				decorBody.setLinvel({ x: vel.x, y: Math.min(dy * 10, 8), z: vel.z }, true);
-				vel = decorBody.linvel();
-			}
+			// Y follows mouse smoothly
+			itemY += (mouseSharedPos.y - itemY) * Math.min(1, delta * 8);
 
 			if (dist > 0.04) {
 				const inv = 1 / dist;
 				const nx = dx * inv;
 				const nz = dz * inv;
+				const px = -nz; // perpendicular to movement
+				const pz = nx;
+				const oy = itemY + 0.05; // slight Y lift to skip floor
 
-				// Anti-tunnel: raycast from ball toward target to detect walls.
-				_wallRay.origin.x = pos.x;
-				_wallRay.origin.y = pos.y + 0.05;
-				_wallRay.origin.z = pos.z;
-				_wallRay.dir.x = nx;
-				_wallRay.dir.y = 0;
-				_wallRay.dir.z = nz;
-				const wallHit = world.castRay(
-					_wallRay,
-					dist,
-					false,
-					undefined,
-					undefined,
-					undefined,
-					decorBody
-				);
+				// Three surface-origin rays: centre + left/right flanks catch corner contacts
+				_wallRayC.origin.x = itemX + nx * BALL_R; _wallRayC.origin.y = oy; _wallRayC.origin.z = itemZ + nz * BALL_R;
+				_wallRayL.origin.x = itemX + px * BALL_R; _wallRayL.origin.y = oy; _wallRayL.origin.z = itemZ + pz * BALL_R;
+				_wallRayR.origin.x = itemX - px * BALL_R; _wallRayR.origin.y = oy; _wallRayR.origin.z = itemZ - pz * BALL_R;
+				_wallRayC.dir.x = _wallRayL.dir.x = _wallRayR.dir.x = nx;
+				_wallRayC.dir.y = _wallRayL.dir.y = _wallRayR.dir.y = 0;
+				_wallRayC.dir.z = _wallRayL.dir.z = _wallRayR.dir.z = nz;
 
-				/* console.log(
-					`[deco drag] pos=(${pos.x.toFixed(2)},${pos.y.toFixed(2)},${pos.z.toFixed(2)}) target=(${tx.toFixed(2)},${tz.toFixed(2)}) dist=${dist.toFixed(3)} wallHit=${wallHit ? `t=${wallHit.timeOfImpact.toFixed(3)}` : 'none'} vel=(${vel.x.toFixed(2)},${vel.z.toFixed(2)})`
-				); */
+				const hitC = world.castRay(_wallRayC, dist, false);
+				const hitL = world.castRay(_wallRayL, dist, false);
+				const hitR = world.castRay(_wallRayR, dist, false);
 
-				if (!wallHit) {
-					const speed = Math.min(dist * 13, DRAG_SPEED);
-					decorBody.setLinvel({ x: nx * speed, y: vel.y, z: nz * speed }, true);
-				} else {
-					// Wall between ball and target — only push up to the wall hit point
-					const safeDist = Math.max(0, wallHit.timeOfImpact - 0.12);
-					/* 					console.log(`[deco drag] WALL HIT safeDist=${safeDist.toFixed(3)}`);
-					 */ if (safeDist > 0.04) {
-						const safeSpeed = Math.min(safeDist * 10, DRAG_SPEED);
-						decorBody.setLinvel({ x: nx * safeSpeed, y: vel.y, z: nz * safeSpeed }, true);
-					} else {
-						decorBody.setLinvel({ x: 0, y: vel.y, z: 0 }, true);
-					}
+				let clearance = dist;
+				if (hitC) clearance = Math.min(clearance, hitC.timeOfImpact);
+				if (hitL) clearance = Math.min(clearance, hitL.timeOfImpact);
+				if (hitR) clearance = Math.min(clearance, hitR.timeOfImpact);
+
+				const STOP_CLEARANCE = 0.06;
+				if (clearance > STOP_CLEARANCE) {
+					const speed = Math.min(dist * 13, DRAG_SPEED, clearance * 15);
+					const move = Math.min(speed * delta, clearance - STOP_CLEARANCE);
+					itemX += nx * move;
+					itemZ += nz * move;
 				}
-			} else {
-				decorBody.setLinvel({ x: 0, y: vel.y, z: 0 }, true);
 			}
 
-			// Stuck detection: blocked by wall or wedged → drop at mouse feet
-			const currentSpeed = Math.sqrt(vel.x * vel.x + vel.z * vel.z);
+			// Stuck detection: item blocked by wall, mouse is far — teleport to mouse feet
+			const movedX = itemX - prevItemX;
+			const movedZ = itemZ - prevItemZ;
+			const currentSpeed = Math.sqrt(movedX * movedX + movedZ * movedZ) / delta;
 			if (dist > STUCK_DIST && currentSpeed < STUCK_SPEED && pickupCooldown <= 0) {
 				stuckTimer += delta;
-				/* 	console.log(
-					`[deco drag] STUCK? timer=${stuckTimer.toFixed(2)} speed=${currentSpeed.toFixed(2)} dist=${dist.toFixed(3)}`
-				); */
 				if (stuckTimer > STUCK_TIME) {
-					/* 	console.log(`[deco drag] DROPPING AT MOUSE - was stuck`); */
-					dropAtMouse();
+					itemX = mouseSharedPos.x;
+					itemZ = mouseSharedPos.z;
+					itemY = mouseSharedPos.y;
+					dropItem();
 					return;
 				}
 			} else {
 				stuckTimer = 0;
 			}
+			prevItemX = itemX;
+			prevItemZ = itemZ;
 
-			// Distance safety net — item somehow far away → also drop at mouse feet
-			// Floor safety net — ball fell below level → rescue at mouse feet
-			if (pos.y < -0.5) {
-				/* 				console.log(`[deco drag] DROPPING AT MOUSE - fell below level (y=${pos.y.toFixed(2)})`);
-				 */ dropAtMouse();
-				return;
-			}
-
-			const dragDx = mouseSharedPos.x - pos.x;
-			const dragDz = mouseSharedPos.z - pos.z;
+			// Safety net: item somehow far from mouse — drop at mouse
+			const dragDx = mouseSharedPos.x - itemX;
+			const dragDz = mouseSharedPos.z - itemZ;
 			if (Math.sqrt(dragDx * dragDx + dragDz * dragDz) > DRAG_MAX_DIST) {
-				/* 				console.log(`[deco drag] DROPPING AT MOUSE - too far from mouse`);
-				 */ dropAtMouse();
+				itemX = mouseSharedPos.x;
+				itemZ = mouseSharedPos.z;
+				itemY = mouseSharedPos.y;
+				dropItem();
 				return;
 			}
 
 			// Glow pulse while dragging
 			if (lightRef) lightRef.intensity = 1.5 + Math.sin(bobT * 5) * 0.8;
 
-			// Auto-capture at spawn (check body position, not mouse)
-			const sx = spawnPosition[0] - pos.x;
-			const sy = spawnPosition[1] - pos.y;
-			const sz = spawnPosition[2] - pos.z;
+			// Auto-capture at spawn
+			const sx = spawnPosition[0] - itemX;
+			const sy = spawnPosition[1] - itemY;
+			const sz = spawnPosition[2] - itemZ;
 			const distToSpawn = Math.sqrt(sx * sx + sy * sy + sz * sz);
 			const nearSpawn = distToSpawn < CAPTURE_RADIUS;
 
@@ -366,12 +337,11 @@
 				isDragging = false;
 				delivered = true;
 				decorationActions.deliver(index);
-				spawnSparks(pos.x, pos.y, pos.z);
+				spawnSparks(itemX, itemY, itemZ);
 				soundActions.playSwoosh();
 				if (groupRef) groupRef.visible = false;
 				if (lightRef) lightRef.intensity = 0.9;
 				if (circleRef) circleRef.visible = false;
-				hideBody();
 			}
 		}
 	});
@@ -396,21 +366,7 @@
 	/>
 </T.Mesh>
 
-<!-- Physics body -->
-<RigidBody
-	type="dynamic"
-	linearDamping={1.8}
-	angularDamping={4}
-	ccd
-	oncreate={(rb) => {
-		decorBody = rb;
-		rb.setTranslation({ x: position[0], y: position[1] + SPAWN_Y_OFFSET, z: position[2] }, true);
-	}}
->
-	<Collider shape="ball" args={[0.1]} />
-</RigidBody>
-
-<!-- Visual — position synced to body each frame -->
+<!-- Visual — position driven by itemX/Y/Z each frame -->
 <T.Group
 	oncreate={(ref) => {
 		groupRef = ref;
