@@ -54,9 +54,23 @@
 	let decoPos: [number, number, number][] = $state([]);
 
 	function repick() {
-		const s = shuffle(POOL);
-		cheesePos = s.slice(0, 9);
-		decoPos = s.slice(9, 14);
+		const shuffled = shuffle(POOL);
+		const used = new Set<[number, number, number]>();
+
+		const pick = (n: number): [number, number, number][] => {
+			const result: [number, number, number][] = [];
+			for (const pos of shuffled) {
+				if (!used.has(pos)) {
+					used.add(pos);
+					result.push(pos);
+					if (result.length === n) break;
+				}
+			}
+			return result;
+		};
+
+		cheesePos = pick(9);
+		decoPos = pick(5);
 	}
 
 	repick();
